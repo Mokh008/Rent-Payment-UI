@@ -1,34 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar">
 <head>
 <meta charset="UTF-8">
 <title>Rent Payment System</title>
+
 <style>
 * {
   box-sizing: border-box;
 }
+
 body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", Tahoma, sans-serif;
-  background: linear-gradient(135deg, #0f172a, #020617);
+  background: linear-gradient(135deg, #0f172a, #020617); /* نفس الإعاشة */
   color: #e5e7eb;
+
   display: flex;
   justify-content: center;
   align-items: center;
 }
+
+.container {
+  width: 95%;
+  max-width: 1200px;
+}
+
 .login-box {
-  width: 420px;
   background: #111827;
   padding: 30px;
   border-radius: 18px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.45);
+  margin-bottom: 25px;
 }
+
 .login-box h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
+  margin: 0 0 20px;
   font-size: 26px;
-  font-weight: 600;
 }
 
 input {
@@ -41,6 +49,7 @@ input {
   background: #1f2933;
   color: #fff;
 }
+
 button {
   width: 100%;
   margin-top: 18px;
@@ -53,58 +62,99 @@ button {
   font-weight: 600;
   cursor: pointer;
 }
+
 button:hover {
   opacity: 0.9;
 }
+
 #error {
   margin-top: 15px;
   color: #fca5a5;
   font-size: 14px;
 }
-#result {
-  margin-top: 25px;
-}
-.card {
+
+/* ===== Table Style (Excel-like) ===== */
+.table-wrapper {
   background: #0b1220;
   padding: 20px;
-  border-radius: 16px;
-  margin-top: 18px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-}
-.card h3 {
-  margin-top: 0;
-  font-size: 20px;
+  border-radius: 18px;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.4);
 }
 
-.card p {
-  margin: 6px 0;
+table {
+  width: 100%;
+  border-collapse: collapse;
   font-size: 14px;
-  color: #cbd5f5;
 }
+
+thead {
+  background: #111827;
+}
+
+th, td {
+  padding: 12px 10px;
+  text-align: center;
+}
+
+th {
+  color: #93c5fd;
+  font-weight: 600;
+  border-bottom: 1px solid #1f2933;
+}
+
+tbody tr {
+  border-bottom: 1px solid #1f2933;
+}
+
+tbody tr:hover {
+  background: #020617;
+}
+
+.badge-yes {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.badge-no {
+  color: #9ca3af;
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="login-box">
-  <h2>Engineer Login</h2>
+<div class="container">
 
-  <input type="text" id="engineerId" placeholder="Enter Engineer ID">
-  <button onclick="loadData()">Login</button>
+  <div class="login-box">
+    <h2>Engineer Login</h2>
+    <input type="text" id="engineerId" placeholder="Enter Engineer ID">
+    <button onclick="loadData()">Login</button>
+    <div id="error"></div>
+  </div>
 
-  <div id="error"></div>
   <div id="result"></div>
+
 </div>
+
 <script>
+/* 🔗 Google Apps Script URL */
 const API_URL = "https://script.google.com/macros/s/AKfycbxQd2z4QIOZgaZwYYzoISC42kUGePoKuWS_UamVx4_4w3Jfa-4eGBiU3aVzMWcnGR6MKw/exec";
+
+/* ===== Helpers ===== */
+function formatDate(d) {
+  if (!d) return "-";
+  return new Date(d).toLocaleDateString("ar-EG");
+}
+
+/* ===== Load Data ===== */
 function loadData() {
   const id = document.getElementById("engineerId").value.trim();
   document.getElementById("error").innerText = "";
-  document.getElementById("result").innerHTML = "Loading...";
+  document.getElementById("result").innerHTML = "";
 
   if (!id) {
-    document.getElementById("error").innerText = "Please enter Engineer ID";
-    document.getElementById("result").innerHTML = "";
+    document.getElementById("error").innerText = "من فضلك أدخل رقم المهندس";
     return;
   }
 
@@ -112,34 +162,67 @@ function loadData() {
     .then(res => res.json())
     .then(showData)
     .catch(() => {
-      document.getElementById("result").innerHTML = "";
-      document.getElementById("error").innerText =
-        "Error connecting to server";
+      document.getElementById("error").innerText = "Error connecting to server";
     });
 }
 
+/* ===== Show Table ===== */
 function showData(data) {
   const result = document.getElementById("result");
-  result.innerHTML = "";
 
   if (!data || data.length === 0) {
-    result.innerHTML = "<p>No active contracts found.</p>";
+    result.innerHTML = "<p>لا توجد مكاتب نشطة لهذا المهندس</p>";
     return;
   }
 
+  let html = `
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>المكتب / الشقة</th>
+          <th>الموقع</th>
+          <th>النوع</th>
+          <th>الإيجار (جنيه)</th>
+          <th>بداية العقد</th>
+          <th>نهاية العقد</th>
+          <th>الأيام المتبقية</th>
+          <th>أثاث</th>
+          <th>طابعة</th>
+          <th>التأمين</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
   data.forEach(item => {
-    result.innerHTML += `
-      <div class="card">
-        <h3>${item.assetName}</h3>
-        <p>📍 Location: ${item.location}</p>
-        <p>🏢 Type: ${item.assetType}</p>
-        <p>💰 Monthly Rent: ${item.monthlyRent} EGP</p>
-        <p>📅 Contract Start: ${item.contractStart}</p>
-        <p>📅 Contract End: ${item.contractEnd}</p>
-        <p>⏱ Remaining Days: ${item.remainingDays}</p>
-      </div>
+    html += `
+      <tr>
+        <td>${item.assetName}</td>
+        <td>${item.location}</td>
+        <td>${item.assetType}</td>
+        <td>${item.monthlyRent}</td>
+        <td>${formatDate(item.contractStart)}</td>
+        <td>${formatDate(item.contractEnd)}</td>
+        <td>${item.remainingDays}</td>
+        <td class="${item.hasFurniture === 'Yes' ? 'badge-yes' : 'badge-no'}">
+          ${item.hasFurniture}
+        </td>
+        <td class="${item.hasPrinter === 'Yes' ? 'badge-yes' : 'badge-no'}">
+          ${item.hasPrinter}
+        </td>
+        <td>${item.deposit}</td>
+      </tr>
     `;
   });
+
+  html += `
+      </tbody>
+    </table>
+  </div>
+  `;
+
+  result.innerHTML = html;
 }
 </script>
 
