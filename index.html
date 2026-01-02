@@ -3,24 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <title>Rent Payment System</title>
-
 <style>
 * {
   box-sizing: border-box;
 }
-
 body {
   margin: 0;
   min-height: 100vh;
   font-family: "Segoe UI", Tahoma, sans-serif;
   background: linear-gradient(135deg, #0f172a, #020617);
   color: #e5e7eb;
-
   display: flex;
   justify-content: center;
   align-items: center;
 }
-
 .login-box {
   width: 420px;
   background: #111827;
@@ -28,7 +24,6 @@ body {
   border-radius: 18px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.45);
 }
-
 .login-box h2 {
   margin-top: 0;
   margin-bottom: 20px;
@@ -46,7 +41,6 @@ input {
   background: #1f2933;
   color: #fff;
 }
-
 button {
   width: 100%;
   margin-top: 18px;
@@ -59,21 +53,17 @@ button {
   font-weight: 600;
   cursor: pointer;
 }
-
 button:hover {
   opacity: 0.9;
 }
-
 #error {
   margin-top: 15px;
   color: #fca5a5;
   font-size: 14px;
 }
-
 #result {
   margin-top: 25px;
 }
-
 .card {
   background: #0b1220;
   padding: 20px;
@@ -81,7 +71,6 @@ button:hover {
   margin-top: 18px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.35);
 }
-
 .card h3 {
   margin-top: 0;
   font-size: 20px;
@@ -106,10 +95,8 @@ button:hover {
   <div id="error"></div>
   <div id="result"></div>
 </div>
-
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxQd2z4QIOZgaZwYYzoISC42kUGePoKuWS_UamVx4_4w3Jfa-4eGBiU3aVzMWcnGR6MKw/exec";
-
 function loadData() {
   const id = document.getElementById("engineerId").value.trim();
   document.getElementById("error").innerText = "";
