@@ -15,31 +15,34 @@ body {
   font-family: "Segoe UI", Tahoma, sans-serif;
   background: linear-gradient(135deg, #0f172a, #020617);
   color: #e5e7eb;
-  padding: 40px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-h2 {
+.login-box {
+  width: 420px;
+  background: #111827;
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.45);
+}
+
+.login-box h2 {
+  margin-top: 0;
   margin-bottom: 20px;
   font-size: 26px;
   font-weight: 600;
 }
 
-.login-box {
-  max-width: 420px;
-  background: #111827;
-  padding: 30px;
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-}
-
-input, select {
+input {
   width: 100%;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   outline: none;
-  margin-top: 12px;
-  font-size: 15px;
+  font-size: 16px;
   background: #1f2933;
   color: #fff;
 }
@@ -48,46 +51,39 @@ button {
   width: 100%;
   margin-top: 18px;
   padding: 14px;
-  border-radius: 10px;
+  border-radius: 12px;
   border: none;
   background: linear-gradient(135deg, #22c55e, #16a34a);
   color: #022c22;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
-}
-
-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 button:hover {
   opacity: 0.9;
 }
 
-#result {
-  margin-top: 30px;
+#error {
+  margin-top: 15px;
+  color: #fca5a5;
+  font-size: 14px;
 }
 
-.alert {
-  background: #7c2d12;
-  padding: 15px;
-  border-radius: 12px;
-  margin-bottom: 20px;
-  color: #fed7aa;
+#result {
+  margin-top: 25px;
 }
 
 .card {
-  background: #111827;
-  padding: 22px;
-  margin-bottom: 20px;
+  background: #0b1220;
+  padding: 20px;
   border-radius: 16px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+  margin-top: 18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.35);
 }
 
 .card h3 {
-  margin: 0 0 10px;
+  margin-top: 0;
   font-size: 20px;
 }
 
@@ -96,21 +92,6 @@ button:hover {
   font-size: 14px;
   color: #cbd5f5;
 }
-
-.badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 12px;
-  margin-right: 6px;
-}
-
-.yes { background: #166534; }
-.no { background: #374151; }
-
-.loader {
-  margin-top: 20px;
-}
 </style>
 </head>
 
@@ -118,83 +99,57 @@ button:hover {
 
 <div class="login-box">
   <h2>Engineer Login</h2>
+
   <input type="text" id="engineerId" placeholder="Enter Engineer ID">
   <button onclick="loadData()">Login</button>
+
+  <div id="error"></div>
+  <div id="result"></div>
 </div>
 
-<div id="result"></div>
-
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbw6KpyP1NGJgJ7HIunHWgYMvr6KEUcai0pqrTILkyas7q88BoYvTveN4KOb6Zs3boznqg/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxQd2z4QIOZgaZwYYzoISC42kUGePoKuWS_UamVx4_4w3Jfa-4eGBiU3aVzMWcnGR6MKw/exec";
 
 function loadData() {
-  const id = document.getElementById("engineerId").value;
-  document.getElementById("result").innerHTML =
-    '<div class="loader">Loading...</div>';
+  const id = document.getElementById("engineerId").value.trim();
+  document.getElementById("error").innerText = "";
+  document.getElementById("result").innerHTML = "Loading...";
 
-  fetch(API_URL + "?engineerId=" + id)
+  if (!id) {
+    document.getElementById("error").innerText = "Please enter Engineer ID";
+    document.getElementById("result").innerHTML = "";
+    return;
+  }
+
+  fetch(API_URL + "?action=getAssets&engineerId=" + id)
     .then(res => res.json())
     .then(showData)
     .catch(() => {
-      document.getElementById("result").innerHTML =
-        "<p>Error connecting to server</p>";
+      document.getElementById("result").innerHTML = "";
+      document.getElementById("error").innerText =
+        "Error connecting to server";
     });
 }
 
 function showData(data) {
-  let div = document.getElementById("result");
-  div.innerHTML = "";
+  const result = document.getElementById("result");
+  result.innerHTML = "";
 
   if (!data || data.length === 0) {
-    div.innerHTML = "<p>No active contracts found.</p>";
+    result.innerHTML = "<p>No active contracts found.</p>";
     return;
   }
 
   data.forEach(item => {
-
-    let alertHTML = "";
-    if (item.alertLevel === "60 Days") {
-      alertHTML = `<div class="alert">⚠️ Contract ends in 60 days</div>`;
-    } else if (item.alertLevel === "30 Days") {
-      alertHTML = `<div class="alert">⏳ Contract ends in 30 days</div>`;
-    }
-
-    div.innerHTML += `
-      ${alertHTML}
-
+    result.innerHTML += `
       <div class="card">
         <h3>${item.assetName}</h3>
-
         <p>📍 Location: ${item.location}</p>
         <p>🏢 Type: ${item.assetType}</p>
         <p>💰 Monthly Rent: ${item.monthlyRent} EGP</p>
-
-        <p>
-          🪑 Furniture:
-          <span class="badge ${item.hasFurniture === "Yes" ? "yes" : "no"}">
-            ${item.hasFurniture}
-          </span>
-
-          🖨️ Printer:
-          <span class="badge ${item.hasPrinter === "Yes" ? "yes" : "no"}">
-            ${item.hasPrinter}
-          </span>
-        </p>
-
-        <p>🔐 Deposit: ${item.deposit} EGP</p>
         <p>📅 Contract Start: ${item.contractStart}</p>
         <p>📅 Contract End: ${item.contractEnd}</p>
-        <p>⏱️ Remaining Days: ${item.remainingDays}</p>
-
-        <select>
-          <option>Select Month</option>
-          <option>2026-01</option>
-          <option>2026-02</option>
-        </select>
-
-        <button disabled>
-          ✔️ Confirm Payment (Backend Next)
-        </button>
+        <p>⏱ Remaining Days: ${item.remainingDays}</p>
       </div>
     `;
   });
