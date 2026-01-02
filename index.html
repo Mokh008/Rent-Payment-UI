@@ -10,7 +10,6 @@
   --text:#020617;
   --border:#CBD5E1;
   --dark:#020617;
-  --success:#16A34A;
 }
 
 *{ box-sizing:border-box; }
@@ -23,6 +22,7 @@ body{
   color:var(--text);
   display:flex;
   justify-content:center;
+  align-items:flex-start;
   padding:30px 15px;
 }
 
@@ -31,6 +31,7 @@ body{
   max-width:1100px;
 }
 
+/* ===== Header ===== */
 .page-title{
   text-align:center;
   font-size:28px;
@@ -38,15 +39,24 @@ body{
   margin-bottom:20px;
 }
 
-/* ===== Card ===== */
+/* ===== Login Card (Small) ===== */
 .main-card{
   background:#fff;
   border-radius:18px;
-  padding:22px;
+  padding:22px 20px;
   box-shadow:0 12px 25px rgba(0,0,0,.08);
   text-align:center;
+  margin-bottom:25px;
   max-width:420px;
-  margin:0 auto 25px;
+  margin-left:auto;
+  margin-right:auto;
+}
+
+.main-card label{
+  display:block;
+  text-align:right;
+  font-weight:600;
+  margin-bottom:6px;
 }
 
 .main-card input{
@@ -70,12 +80,32 @@ body{
   cursor:pointer;
 }
 
+#error{
+  margin-top:10px;
+  color:#DC2626;
+  font-size:13px;
+}
+
+/* ===== Loader ===== */
+.loader{
+  width:36px;
+  height:36px;
+  border:4px solid #E5E7EB;
+  border-top:4px solid #020617;
+  border-radius:50%;
+  margin:20px auto;
+  animation:spin 1s linear infinite;
+  display:none;
+}
+@keyframes spin{ to{ transform:rotate(360deg);} }
+
 /* ===== Table ===== */
 .table-wrapper{
   background:#020617;
   border-radius:18px;
   padding:20px;
   color:#E5E7EB;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
 }
 
 table{
@@ -98,101 +128,24 @@ tr{
   border-bottom:1px solid #1E293B;
 }
 
+.owner{
+  color:#FDE68A;
+  font-weight:600;
+}
+
 select{
-  padding:6px;
+  padding:6px 8px;
   border-radius:8px;
 }
 
-/* ===== Buttons ===== */
 .pay-btn{
   padding:6px 12px;
   border-radius:8px;
   border:none;
   background:#2563EB;
   color:#fff;
+  font-size:13px;
   cursor:pointer;
-}
-
-.paid{
-  background:var(--success)!important;
-  cursor:default;
-}
-
-.print-btn{
-  margin-top:20px;
-  padding:16px;
-  width:100%;
-  border:none;
-  border-radius:14px;
-  background:#111827;
-  color:#fff;
-  font-size:18px;
-  font-weight:800;
-  cursor:pointer;
-}
-
-/* ===== Warnings ===== */
-.warn-60{
-  background:rgba(249,115,22,.15);
-  color:#FED7AA;
-}
-.warn-30{
-  background:rgba(234,179,8,.15);
-  color:#FEF08A;
-}
-
-.badge{
-  display:inline-block;
-  padding:4px 8px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:700;
-  margin-inline-start:6px;
-}
-.badge-60{ background:#F97316; color:#111827; }
-.badge-30{ background:#EAB308; color:#111827; }
-
-.notice{
-  font-size:12px;
-  opacity:.9;
-  margin-top:6px;
-}
-
-/* ===== Loading ===== */
-.loading-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(2,6,23,.75);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-
-.loading-box{
-  background:#020617;
-  padding:30px 40px;
-  border-radius:20px;
-  text-align:center;
-  box-shadow:0 20px 50px rgba(0,0,0,.4);
-}
-
-.spinner{
-  width:48px;
-  height:48px;
-  border:4px solid #1E293B;
-  border-top:4px solid #38BDF8;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-  margin:0 auto 15px;
-}
-
-@keyframes spin{ to{ transform:rotate(360deg); } }
-
-.loading-text{
-  color:#E5E7EB;
-  font-size:15px;
-  font-weight:600;
 }
 </style>
 </head>
@@ -200,178 +153,118 @@ select{
 <body>
 
 <div class="container">
+
+  <!-- Title -->
   <div class="page-title">نظام دفع الإيجارات</div>
 
+  <!-- Login -->
   <div class="main-card">
-    <input id="engineerId" placeholder="رقم المهندس">
+    <label>رقم المهندس (ID)</label>
+    <input id="engineerId" type="text" placeholder="مثال: 1001777">
     <button class="main-btn" onclick="loadData()">عرض البيانات</button>
+    <div id="error"></div>
+    <div id="loading" class="loader"></div>
   </div>
 
+  <!-- Result -->
   <div id="result"></div>
-</div>
 
-<!-- Loading -->
-<div id="loadingOverlay" class="loading-overlay">
-  <div class="loading-box">
-    <div class="spinner"></div>
-    <div id="loadingText" class="loading-text">جاري التحميل...</div>
-  </div>
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbz1J46xbhrp_1AT5y7Tws8oc3iTkhZTYodbo1gDekk0U4_MePlv1zWn05VmuaJIo866UA/exec";
-let printedReceipts = [];
+const API_URL =
+"https://script.google.com/macros/s/AKfycbz1J46xbhrp_1AT5y7Tws8oc3iTkhZTYodbo1gDekk0U4_MePlv1zWn05VmuaJIo866UA/exec";
 
-/* ===== Loading ===== */
-function showLoading(text){
-  document.getElementById("loadingText").innerText = text || "جاري التحميل...";
-  document.getElementById("loadingOverlay").style.display = "flex";
-}
-function hideLoading(){
-  document.getElementById("loadingOverlay").style.display = "none";
+function formatDate(d){
+  if(!d) return "-";
+  return new Date(d).toLocaleDateString("ar-EG");
 }
 
-/* ===== Warnings ===== */
-function getWarning(days){
-  if(days <= 30){
-    return {
-      rowClass:"warn-30",
-      badge:'<span class="badge badge-30">قريب</span>',
-      text:"العقد هينتهي خلال 30 يوم"
-    };
-  }
-  if(days <= 60){
-    return {
-      rowClass:"warn-60",
-      badge:'<span class="badge badge-60">تنبيه</span>',
-      text:"العقد هينتهي خلال 60 يوم"
-    };
-  }
-  return { rowClass:"", badge:"", text:"" };
-}
-
-/* ===== Load Data ===== */
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
-  if(!id) return;
+  const error=document.getElementById("error");
+  const loading=document.getElementById("loading");
+  const result=document.getElementById("result");
 
-  showLoading("جاري تحميل المكاتب...");
+  error.innerText="";
+  result.innerHTML="";
+
+  if(!id){
+    error.innerText="من فضلك أدخل رقم المهندس";
+    return;
+  }
+
+  loading.style.display="block";
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
-    .then(r=>r.json())
+    .then(res=>res.json())
     .then(data=>{
-      hideLoading();
+      loading.style.display="none";
       showData(data);
     })
     .catch(()=>{
-      hideLoading();
-      alert("خطأ في الاتصال");
+      loading.style.display="none";
+      error.innerText="خطأ في الاتصال بالسيرفر";
     });
 }
 
-/* ===== Show Data ===== */
 function showData(data){
-  if(!data.length){
-    document.getElementById("result").innerHTML="لا توجد بيانات";
+  const result=document.getElementById("result");
+
+  if(!data || data.length===0){
+    result.innerHTML="<p style='text-align:center'>لا توجد بيانات</p>";
     return;
   }
 
   let html=`
   <div class="table-wrapper">
-  <table>
-    <thead>
-      <tr>
-        <th>المكتب</th>
-        <th>الإيجار</th>
-        <th>الشهر</th>
-        <th>الدفع</th>
-      </tr>
-    </thead><tbody>`;
+    <table>
+      <thead>
+        <tr>
+          <th>المكتب</th>
+          <th>الموقع</th>
+          <th>النوع</th>
+          <th>الإيجار</th>
+          <th>بداية العقد</th>
+          <th>نهاية العقد</th>
+          <th>الأيام المتبقية</th>
+          <th>اسم المؤجر</th>
+          <th>الشهر</th>
+          <th>الدفع</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
-  data.forEach((item,i)=>{
-    const warn = getWarning(item.remainingDays);
-
+  data.forEach(item=>{
+    const key=item.assetName.replace(/\s/g,"_");
     html+=`
-    <tr class="${warn.rowClass}">
-      <td>
-        ${item.assetName}
-        ${warn.badge}
-        ${warn.text ? `<div class="notice">${warn.text}</div>` : ``}
-      </td>
-      <td>${item.monthlyRent}</td>
-      <td>
-        <select id="month_${i}">
-          <option value="">اختر</option>
-          <option>12-2025</option>
-          <option>01-2026</option>
-          <option>02-2026</option>
-        </select>
-      </td>
-      <td>
-        <button class="pay-btn" id="pay_${i}"
-        onclick="pay(${i},'${item.assetName}','${item.ownerName}','${item.ownerNationalId}',${item.monthlyRent})">
-        دفع
-        </button>
-      </td>
-    </tr>`;
+      <tr>
+        <td>${item.assetName}</td>
+        <td>${item.location}</td>
+        <td>${item.assetType}</td>
+        <td>${item.monthlyRent}</td>
+        <td>${formatDate(item.contractStart)}</td>
+        <td>${formatDate(item.contractEnd)}</td>
+        <td>${item.remainingDays}</td>
+        <td class="owner">${item.ownerName}</td>
+        <td>
+          <select id="m_${key}">
+            <option value="">اختر الشهر</option>
+            <option>12-2025</option>
+            <option>01-2026</option>
+            <option>02-2026</option>
+          </select>
+        </td>
+        <td>
+          <button class="pay-btn">دفع</button>
+        </td>
+      </tr>
+    `;
   });
 
-  html+=`</tbody></table>
-    <button class="print-btn" onclick="printAll()">🖨️ طباعة الإيصالات</button>
-  </div>`;
-
-  document.getElementById("result").innerHTML=html;
-}
-
-/* ===== Pay ===== */
-function pay(i,asset,owner,nid,amount){
-  const month=document.getElementById("month_"+i).value;
-  if(!month) return alert("اختر الشهر");
-
-  showLoading("جاري تسجيل الدفع...");
-
-  fetch(API_URL,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"confirmPayment",
-      engineerId:document.getElementById("engineerId").value,
-      assetName:asset,
-      ownerName:owner,
-      ownerNationalId:nid,
-      amount:amount,
-      month:month
-    })
-  })
-  .then(r=>r.json())
-  .then(res=>{
-    hideLoading();
-    if(res.error){ alert(res.error); return; }
-
-    const btn=document.getElementById("pay_"+i);
-    btn.innerText="✔ تم الدفع";
-    btn.classList.add("paid");
-    btn.disabled=true;
-
-    printedReceipts.push(res.pdfUrl);
-  })
-  .catch(()=>{
-    hideLoading();
-    alert("فشل الاتصال");
-  });
-}
-
-/* ===== Print ===== */
-function printAll(){
-  if(!printedReceipts.length){
-    alert("لا توجد إيصالات");
-    return;
-  }
-
-  showLoading("جاري فتح الإيصالات...");
-  setTimeout(()=>{
-    printedReceipts.forEach(u=>window.open(u));
-    hideLoading();
-  },800);
+  html+=`</tbody></table></div>`;
+  result.innerHTML=html;
 }
 </script>
 
