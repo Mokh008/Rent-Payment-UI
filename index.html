@@ -2,7 +2,7 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>نظام الإيجارات</title>
+<title>نظام دفع الإيجارات</title>
 
 <style>
 :root{
@@ -23,7 +23,7 @@ body{
   display:flex;
   justify-content:center;
   align-items:flex-start;
-  padding:40px 15px;
+  padding:30px 15px;
 }
 
 .container{
@@ -31,60 +31,73 @@ body{
   max-width:1100px;
 }
 
-/* ===== Main Card ===== */
+/* ===== Header ===== */
+.page-title{
+  text-align:center;
+  font-size:28px;
+  font-weight:800;
+  margin-bottom:20px;
+}
+
+/* ===== Login Card (Small) ===== */
 .main-card{
   background:#fff;
-  border-radius:22px;
-  padding:40px 35px;
-  box-shadow:0 20px 40px rgba(0,0,0,.08);
+  border-radius:18px;
+  padding:22px 20px;
+  box-shadow:0 12px 25px rgba(0,0,0,.08);
   text-align:center;
-  margin-bottom:30px;
+  margin-bottom:25px;
+  max-width:420px;
+  margin-left:auto;
+  margin-right:auto;
 }
 
-.main-card h1{
-  margin:0 0 25px;
-  font-size:34px;
-  font-weight:800;
-}
-
-.field{
-  text-align:right;
-  margin-bottom:22px;
-}
-
-.field label{
+.main-card label{
   display:block;
-  margin-bottom:8px;
+  text-align:right;
   font-weight:600;
+  margin-bottom:6px;
 }
 
-input{
+.main-card input{
   width:100%;
-  padding:16px 18px;
-  border-radius:14px;
+  padding:14px;
+  border-radius:12px;
   border:1px solid var(--border);
-  font-size:16px;
-  outline:none;
+  font-size:15px;
 }
 
 .main-btn{
-  margin-top:25px;
+  margin-top:15px;
   width:100%;
-  padding:18px;
-  border-radius:16px;
+  padding:14px;
+  border-radius:14px;
   border:none;
   background:var(--dark);
   color:#fff;
-  font-size:18px;
+  font-size:16px;
   font-weight:700;
   cursor:pointer;
 }
 
 #error{
-  margin-top:15px;
+  margin-top:10px;
   color:#DC2626;
-  font-size:14px;
+  font-size:13px;
 }
+
+/* ===== Loader ===== */
+.loader{
+  width:36px;
+  height:36px;
+  border:4px solid #E5E7EB;
+  border-top:4px solid #020617;
+  border-radius:50%;
+  margin:20px auto;
+  animation:spin 1s linear infinite;
+  display:none;
+}
+@keyframes spin{ to{ transform:rotate(360deg);} }
 
 /* ===== Table ===== */
 .table-wrapper{
@@ -115,8 +128,9 @@ tr{
   border-bottom:1px solid #1E293B;
 }
 
-tr:hover{
-  background:#020617;
+.owner{
+  color:#FDE68A;
+  font-weight:600;
 }
 
 select{
@@ -140,20 +154,19 @@ select{
 
 <div class="container">
 
-  <!-- ===== Card ===== -->
+  <!-- Title -->
+  <div class="page-title">نظام دفع الإيجارات</div>
+
+  <!-- Login -->
   <div class="main-card">
-    <h1>عرض المكاتب والاستراحات</h1>
-
-    <div class="field">
-      <label>رقم المهندس (ID)</label>
-      <input id="engineerId" type="text" placeholder="مثال: 1001777">
-    </div>
-
+    <label>رقم المهندس (ID)</label>
+    <input id="engineerId" type="text" placeholder="مثال: 1001777">
     <button class="main-btn" onclick="loadData()">عرض البيانات</button>
     <div id="error"></div>
+    <div id="loading" class="loader"></div>
   </div>
 
-  <!-- ===== Result ===== -->
+  <!-- Result -->
   <div id="result"></div>
 
 </div>
@@ -170,6 +183,7 @@ function formatDate(d){
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
   const error=document.getElementById("error");
+  const loading=document.getElementById("loading");
   const result=document.getElementById("result");
 
   error.innerText="";
@@ -180,10 +194,16 @@ function loadData(){
     return;
   }
 
+  loading.style.display="block";
+
   fetch(API_URL+"?action=getAssets&engineerId="+id)
     .then(res=>res.json())
-    .then(showData)
+    .then(data=>{
+      loading.style.display="none";
+      showData(data);
+    })
     .catch(()=>{
+      loading.style.display="none";
       error.innerText="خطأ في الاتصال بالسيرفر";
     });
 }
@@ -208,6 +228,7 @@ function showData(data){
           <th>بداية العقد</th>
           <th>نهاية العقد</th>
           <th>الأيام المتبقية</th>
+          <th>اسم المؤجر</th>
           <th>الشهر</th>
           <th>الدفع</th>
         </tr>
@@ -216,7 +237,7 @@ function showData(data){
   `;
 
   data.forEach(item=>{
-    const key = item.assetName.replace(/\s/g,"_");
+    const key=item.assetName.replace(/\s/g,"_");
     html+=`
       <tr>
         <td>${item.assetName}</td>
@@ -226,6 +247,7 @@ function showData(data){
         <td>${formatDate(item.contractStart)}</td>
         <td>${formatDate(item.contractEnd)}</td>
         <td>${item.remainingDays}</td>
+        <td class="owner">${item.ownerName}</td>
         <td>
           <select id="m_${key}">
             <option value="">اختر الشهر</option>
@@ -235,15 +257,7 @@ function showData(data){
           </select>
         </td>
         <td>
-          <button class="pay-btn"
-            onclick="confirmPayment(
-              '${item.assetName}',
-              '${item.monthlyRent}',
-              '${item.ownerName}',
-              '${item.ownerNationalId}'
-            )">
-            Confirm
-          </button>
+          <button class="pay-btn">دفع</button>
         </td>
       </tr>
     `;
@@ -251,38 +265,6 @@ function showData(data){
 
   html+=`</tbody></table></div>`;
   result.innerHTML=html;
-}
-
-function confirmPayment(assetName, amount, ownerName, ownerNationalId){
-  const key = assetName.replace(/\s/g,"_");
-  const month = document.getElementById("m_"+key).value;
-
-  if(!month){
-    alert("من فضلك اختر الشهر أولاً");
-    return;
-  }
-
-  fetch(API_URL,{
-    method:"POST",
-    body:JSON.stringify({
-      action:"confirmPayment",
-      engineerId:document.getElementById("engineerId").value,
-      assetName,
-      month,
-      amount,
-      ownerName,
-      ownerNationalId
-    })
-  })
-  .then(r=>r.json())
-  .then(res=>{
-    if(res.error){
-      alert(res.error);
-    }else{
-      window.open(res.pdfUrl,"_blank");
-      alert("تم الدفع وتوليد الإيصال");
-    }
-  });
 }
 </script>
 
