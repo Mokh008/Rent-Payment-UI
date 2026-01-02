@@ -6,11 +6,10 @@
 
 <style>
 :root{
-  --primary:#0F172A;
   --bg:#F1F5F9;
   --text:#020617;
-  --muted:#64748B;
   --border:#CBD5E1;
+  --dark:#020617;
 }
 
 *{ box-sizing:border-box; }
@@ -19,7 +18,7 @@ body{
   margin:0;
   min-height:100vh;
   background:var(--bg);
-  font-family:"Segoe UI", Tahoma, sans-serif;
+  font-family:"Segoe UI",Tahoma,sans-serif;
   color:var(--text);
   display:flex;
   justify-content:center;
@@ -32,7 +31,7 @@ body{
   max-width:1100px;
 }
 
-/* ===== Main Card (Like Expenses) ===== */
+/* ===== Main Card ===== */
 .main-card{
   background:#fff;
   border-radius:22px;
@@ -68,25 +67,17 @@ input{
   outline:none;
 }
 
-input::placeholder{
-  color:#94A3B8;
-}
-
 .main-btn{
   margin-top:25px;
   width:100%;
   padding:18px;
   border-radius:16px;
   border:none;
-  background:#020617;
+  background:var(--dark);
   color:#fff;
   font-size:18px;
   font-weight:700;
   cursor:pointer;
-}
-
-.main-btn:hover{
-  opacity:.95;
 }
 
 #error{
@@ -128,9 +119,9 @@ tr:hover{
   background:#020617;
 }
 
-.owner{
-  color:#FDE68A;
-  font-weight:600;
+select{
+  padding:6px 8px;
+  border-radius:8px;
 }
 
 .pay-btn{
@@ -159,7 +150,6 @@ tr:hover{
     </div>
 
     <button class="main-btn" onclick="loadData()">عرض البيانات</button>
-
     <div id="error"></div>
   </div>
 
@@ -218,7 +208,7 @@ function showData(data){
           <th>بداية العقد</th>
           <th>نهاية العقد</th>
           <th>الأيام المتبقية</th>
-          <th>المؤجر</th>
+          <th>الشهر</th>
           <th>الدفع</th>
         </tr>
       </thead>
@@ -226,6 +216,7 @@ function showData(data){
   `;
 
   data.forEach(item=>{
+    const key = item.assetName.replace(/\s/g,"_");
     html+=`
       <tr>
         <td>${item.assetName}</td>
@@ -235,14 +226,63 @@ function showData(data){
         <td>${formatDate(item.contractStart)}</td>
         <td>${formatDate(item.contractEnd)}</td>
         <td>${item.remainingDays}</td>
-        <td class="owner">${item.ownerName}</td>
-        <td><button class="pay-btn">دفع</button></td>
+        <td>
+          <select id="m_${key}">
+            <option value="">اختر الشهر</option>
+            <option>12-2025</option>
+            <option>01-2026</option>
+            <option>02-2026</option>
+          </select>
+        </td>
+        <td>
+          <button class="pay-btn"
+            onclick="confirmPayment(
+              '${item.assetName}',
+              '${item.monthlyRent}',
+              '${item.ownerName}',
+              '${item.ownerNationalId}'
+            )">
+            Confirm
+          </button>
+        </td>
       </tr>
     `;
   });
 
   html+=`</tbody></table></div>`;
   result.innerHTML=html;
+}
+
+function confirmPayment(assetName, amount, ownerName, ownerNationalId){
+  const key = assetName.replace(/\s/g,"_");
+  const month = document.getElementById("m_"+key).value;
+
+  if(!month){
+    alert("من فضلك اختر الشهر أولاً");
+    return;
+  }
+
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"confirmPayment",
+      engineerId:document.getElementById("engineerId").value,
+      assetName,
+      month,
+      amount,
+      ownerName,
+      ownerNationalId
+    })
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.error){
+      alert(res.error);
+    }else{
+      window.open(res.pdfUrl,"_blank");
+      alert("تم الدفع وتوليد الإيصال");
+    }
+  });
 }
 </script>
 
