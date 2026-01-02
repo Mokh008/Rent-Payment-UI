@@ -2,139 +2,139 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8">
-<title>Rent Contracts System</title>
+<title>نظام الإيجارات</title>
 
 <style>
 :root{
   --primary:#0F172A;
-  --bg:#F8FAFC;
+  --bg:#F1F5F9;
   --text:#020617;
-  --login:#6B7280;      /* Gray */
-  --card:#0B1220;
-  --accent:#22C55E;
-  --accent-dark:#16A34A;
+  --muted:#64748B;
+  --border:#CBD5E1;
 }
 
-/* ===== Base ===== */
 *{ box-sizing:border-box; }
 
 body{
   margin:0;
   min-height:100vh;
-  font-family:"Segoe UI",Tahoma,sans-serif;
   background:var(--bg);
+  font-family:"Segoe UI", Tahoma, sans-serif;
   color:var(--text);
   display:flex;
   justify-content:center;
   align-items:flex-start;
-  padding:30px 20px;
+  padding:40px 15px;
 }
 
 .container{
   width:100%;
-  max-width:1300px;
+  max-width:1100px;
 }
 
-/* ===== Login Card (Small) ===== */
-.login-box{
-  background:var(--login);
-  padding:18px 22px;
-  border-radius:14px;
-  box-shadow:0 10px 25px rgba(0,0,0,.25);
-  margin-bottom:25px;
-  max-width:420px;
+/* ===== Main Card (Like Expenses) ===== */
+.main-card{
+  background:#fff;
+  border-radius:22px;
+  padding:40px 35px;
+  box-shadow:0 20px 40px rgba(0,0,0,.08);
+  text-align:center;
+  margin-bottom:30px;
 }
 
-.login-box h2{
-  margin:0 0 10px;
-  font-size:18px;
-  color:#000;           /* عنوان أسود */
+.main-card h1{
+  margin:0 0 25px;
+  font-size:34px;
+  font-weight:800;
+}
+
+.field{
+  text-align:right;
+  margin-bottom:22px;
+}
+
+.field label{
+  display:block;
+  margin-bottom:8px;
   font-weight:600;
-}
-
-.login-box p{
-  margin:0 0 12px;
-  font-size:13px;
-  color:#E5E7EB;        /* فونت أبيض */
 }
 
 input{
   width:100%;
-  padding:10px 12px;
-  border-radius:10px;
-  border:none;
+  padding:16px 18px;
+  border-radius:14px;
+  border:1px solid var(--border);
+  font-size:16px;
   outline:none;
-  font-size:14px;
-  background:#1F2933;
-  color:#fff;
 }
 
-button{
+input::placeholder{
+  color:#94A3B8;
+}
+
+.main-btn{
+  margin-top:25px;
   width:100%;
-  margin-top:12px;
-  padding:11px;
-  border-radius:10px;
+  padding:18px;
+  border-radius:16px;
   border:none;
-  background:linear-gradient(135deg,var(--accent),var(--accent-dark));
-  color:#022C22;
-  font-size:15px;
-  font-weight:600;
+  background:#020617;
+  color:#fff;
+  font-size:18px;
+  font-weight:700;
   cursor:pointer;
 }
 
-button:hover{ opacity:.9; }
+.main-btn:hover{
+  opacity:.95;
+}
 
 #error{
-  margin-top:10px;
-  color:#FECACA;
-  font-size:13px;
+  margin-top:15px;
+  color:#DC2626;
+  font-size:14px;
 }
 
 /* ===== Table ===== */
 .table-wrapper{
-  background:var(--card);
-  padding:20px;
+  background:#020617;
   border-radius:18px;
-  box-shadow:0 15px 30px rgba(0,0,0,.3);
+  padding:20px;
+  color:#E5E7EB;
+  box-shadow:0 20px 40px rgba(0,0,0,.2);
 }
 
 table{
   width:100%;
   border-collapse:collapse;
   font-size:14px;
-  color:#E5E7EB;
-}
-
-thead{
-  background:#020617;
 }
 
 th,td{
-  padding:12px 10px;
+  padding:12px;
   text-align:center;
 }
 
 th{
   color:#93C5FD;
-  font-weight:600;
-  border-bottom:1px solid #1F2933;
+  border-bottom:1px solid #1E293B;
 }
 
-tbody tr{
-  border-bottom:1px solid #1F2933;
+tr{
+  border-bottom:1px solid #1E293B;
 }
 
-tbody tr:hover{
+tr:hover{
   background:#020617;
 }
 
-.yes{ color:#22C55E; font-weight:600; }
-.no{ color:#9CA3AF; }
-.owner{ color:#FDE68A; font-weight:600; }
+.owner{
+  color:#FDE68A;
+  font-weight:600;
+}
 
-/* زرار الدفع (جاهز) */
 .pay-btn{
-  padding:6px 10px;
+  padding:6px 12px;
   border-radius:8px;
   border:none;
   background:#2563EB;
@@ -149,16 +149,21 @@ tbody tr:hover{
 
 <div class="container">
 
-  <!-- Login -->
-  <div class="login-box">
-    <h2>عرض بيانات المكاتب / الاستراحات</h2>
-    <p>ادخل رقم الـ ID مثال: <b>1001777</b></p>
-    <input type="text" id="engineerId" placeholder="Engineer ID">
-    <button onclick="loadData()">عرض البيانات</button>
+  <!-- ===== Card ===== -->
+  <div class="main-card">
+    <h1>عرض المكاتب والاستراحات</h1>
+
+    <div class="field">
+      <label>رقم المهندس (ID)</label>
+      <input id="engineerId" type="text" placeholder="مثال: 1001777">
+    </div>
+
+    <button class="main-btn" onclick="loadData()">عرض البيانات</button>
+
     <div id="error"></div>
   </div>
 
-  <!-- Result -->
+  <!-- ===== Result ===== -->
   <div id="result"></div>
 
 </div>
@@ -189,7 +194,7 @@ function loadData(){
     .then(res=>res.json())
     .then(showData)
     .catch(()=>{
-      error.innerText="Error connecting to server";
+      error.innerText="خطأ في الاتصال بالسيرفر";
     });
 }
 
@@ -197,7 +202,7 @@ function showData(data){
   const result=document.getElementById("result");
 
   if(!data || data.length===0){
-    result.innerHTML="<p>لا توجد بيانات لهذا المهندس</p>";
+    result.innerHTML="<p style='text-align:center'>لا توجد بيانات</p>";
     return;
   }
 
@@ -206,16 +211,13 @@ function showData(data){
     <table>
       <thead>
         <tr>
-          <th>المكتب / الشقة</th>
+          <th>المكتب</th>
           <th>الموقع</th>
           <th>النوع</th>
           <th>الإيجار</th>
           <th>بداية العقد</th>
           <th>نهاية العقد</th>
           <th>الأيام المتبقية</th>
-          <th>أثاث</th>
-          <th>طابعة</th>
-          <th>التأمين</th>
           <th>المؤجر</th>
           <th>الدفع</th>
         </tr>
@@ -233,23 +235,13 @@ function showData(data){
         <td>${formatDate(item.contractStart)}</td>
         <td>${formatDate(item.contractEnd)}</td>
         <td>${item.remainingDays}</td>
-        <td class="${item.hasFurniture==="Yes"?"yes":"no"}">${item.hasFurniture}</td>
-        <td class="${item.hasPrinter==="Yes"?"yes":"no"}">${item.hasPrinter}</td>
-        <td>${item.deposit}</td>
         <td class="owner">${item.ownerName}</td>
-        <td>
-          <button class="pay-btn">دفع الإيجار</button>
-        </td>
+        <td><button class="pay-btn">دفع</button></td>
       </tr>
     `;
   });
 
-  html+=`
-      </tbody>
-    </table>
-  </div>
-  `;
-
+  html+=`</tbody></table></div>`;
   result.innerHTML=html;
 }
 </script>
