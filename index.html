@@ -5,13 +5,12 @@
 <title>Rent Contracts System</title>
 
 <style>
-/* ===== Color System ===== */
 :root{
   --primary:#0F172A;
   --bg:#F8FAFC;
   --text:#020617;
+  --login:#6B7280;      /* Gray */
   --card:#0B1220;
-  --border:#E5E7EB;
   --accent:#22C55E;
   --accent-dark:#16A34A;
 }
@@ -25,11 +24,10 @@ body{
   font-family:"Segoe UI",Tahoma,sans-serif;
   background:var(--bg);
   color:var(--text);
-
   display:flex;
   justify-content:center;
   align-items:flex-start;
-  padding:40px 20px;
+  padding:30px 20px;
 }
 
 .container{
@@ -37,41 +35,49 @@ body{
   max-width:1300px;
 }
 
-/* ===== Login ===== */
+/* ===== Login Card (Small) ===== */
 .login-box{
-  background:var(--primary);
-  color:#fff;
-  padding:30px;
-  border-radius:18px;
-  box-shadow:0 20px 40px rgba(0,0,0,.25);
+  background:var(--login);
+  padding:18px 22px;
+  border-radius:14px;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
   margin-bottom:25px;
+  max-width:420px;
 }
 
 .login-box h2{
-  margin:0 0 20px;
-  font-size:26px;
+  margin:0 0 10px;
+  font-size:18px;
+  color:#000;           /* عنوان أسود */
+  font-weight:600;
+}
+
+.login-box p{
+  margin:0 0 12px;
+  font-size:13px;
+  color:#E5E7EB;        /* فونت أبيض */
 }
 
 input{
   width:100%;
-  padding:14px;
-  border-radius:12px;
+  padding:10px 12px;
+  border-radius:10px;
   border:none;
   outline:none;
-  font-size:16px;
+  font-size:14px;
   background:#1F2933;
   color:#fff;
 }
 
 button{
   width:100%;
-  margin-top:18px;
-  padding:14px;
-  border-radius:12px;
+  margin-top:12px;
+  padding:11px;
+  border-radius:10px;
   border:none;
   background:linear-gradient(135deg,var(--accent),var(--accent-dark));
   color:#022C22;
-  font-size:17px;
+  font-size:15px;
   font-weight:600;
   cursor:pointer;
 }
@@ -79,9 +85,9 @@ button{
 button:hover{ opacity:.9; }
 
 #error{
-  margin-top:12px;
-  color:#FCA5A5;
-  font-size:14px;
+  margin-top:10px;
+  color:#FECACA;
+  font-size:13px;
 }
 
 /* ===== Table ===== */
@@ -122,13 +128,19 @@ tbody tr:hover{
   background:#020617;
 }
 
-/* ===== Badges ===== */
 .yes{ color:#22C55E; font-weight:600; }
 .no{ color:#9CA3AF; }
+.owner{ color:#FDE68A; font-weight:600; }
 
-.owner{
-  color:#FDE68A;
-  font-weight:600;
+/* زرار الدفع (جاهز) */
+.pay-btn{
+  padding:6px 10px;
+  border-radius:8px;
+  border:none;
+  background:#2563EB;
+  color:#fff;
+  font-size:13px;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -137,29 +149,29 @@ tbody tr:hover{
 
 <div class="container">
 
+  <!-- Login -->
   <div class="login-box">
-    <h2>Engineer Login</h2>
-    <input type="text" id="engineerId" placeholder="Enter Engineer ID">
-    <button onclick="loadData()">Login</button>
+    <h2>عرض بيانات المكاتب / الاستراحات</h2>
+    <p>ادخل رقم الـ ID مثال: <b>1001777</b></p>
+    <input type="text" id="engineerId" placeholder="Engineer ID">
+    <button onclick="loadData()">عرض البيانات</button>
     <div id="error"></div>
   </div>
 
+  <!-- Result -->
   <div id="result"></div>
 
 </div>
 
 <script>
-/* 🔗 Google Apps Script URL */
 const API_URL =
 "https://script.google.com/macros/s/AKfycbwn9TRekl7HRtGtC_cI8ypyHzp8L2y2aQntNQF0KOpS3DeS7nneCRK42FX1eMcOWCZzzQ/exec";
 
-/* ===== Helpers ===== */
 function formatDate(d){
   if(!d) return "-";
   return new Date(d).toLocaleDateString("ar-EG");
 }
 
-/* ===== Load Data ===== */
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
   const error=document.getElementById("error");
@@ -181,12 +193,11 @@ function loadData(){
     });
 }
 
-/* ===== Show Table ===== */
 function showData(data){
   const result=document.getElementById("result");
 
   if(!data || data.length===0){
-    result.innerHTML="<p>لا توجد مكاتب نشطة لهذا المهندس</p>";
+    result.innerHTML="<p>لا توجد بيانات لهذا المهندس</p>";
     return;
   }
 
@@ -198,14 +209,15 @@ function showData(data){
           <th>المكتب / الشقة</th>
           <th>الموقع</th>
           <th>النوع</th>
-          <th>الإيجار (جنيه)</th>
+          <th>الإيجار</th>
           <th>بداية العقد</th>
           <th>نهاية العقد</th>
           <th>الأيام المتبقية</th>
           <th>أثاث</th>
           <th>طابعة</th>
           <th>التأمين</th>
-          <th>اسم المؤجر</th>
+          <th>المؤجر</th>
+          <th>الدفع</th>
         </tr>
       </thead>
       <tbody>
@@ -225,6 +237,9 @@ function showData(data){
         <td class="${item.hasPrinter==="Yes"?"yes":"no"}">${item.hasPrinter}</td>
         <td>${item.deposit}</td>
         <td class="owner">${item.ownerName}</td>
+        <td>
+          <button class="pay-btn">دفع الإيجار</button>
+        </td>
       </tr>
     `;
   });
