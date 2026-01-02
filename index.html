@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Rent Payment System</title>
+
+<style>
+body {
+  background: #222B35;
+  color: #fff;
+  font-family: Arial;
+  padding: 30px;
+}
+input, button {
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 10px;
+}
+.card {
+  background: #2f3a48;
+  padding: 15px;
+  margin-top: 15px;
+  border-radius: 10px;
+}
+button {
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Engineer Login</h2>
+
+<input type="text" id="engineerId" placeholder="Enter Engineer ID">
+<br>
+<button onclick="loadData()">Login</button>
+
+<div id="result"></div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwyB-l2nfG8ftmlpxqlcVYnsFvOycrOjNFwyM9JHSdiQicUDo9FFrlhithAzRgX60QEEQ/exec";
+
+function loadData() {
+  const id = document.getElementById("engineerId").value;
+
+  fetch(API_URL + "?engineerId=" + id)
+    .then(res => res.json())
+    .then(showData)
+    .catch(() => {
+      document.getElementById("result").innerHTML =
+        "<p>Error connecting to server</p>";
+    });
+}
+
+function showData(data) {
+  let div = document.getElementById("result");
+  div.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    div.innerHTML = "<p>No active contracts found.</p>";
+    return;
+  }
+
+  data.forEach(item => {
+    div.innerHTML += `
+      <div class="card">
+        <h3>${item.assetName}</h3>
+        <p>Type: ${item.assetType}</p>
+        <p>Rent: ${item.monthlyRent} EGP</p>
+        <p>Contract End: ${item.contractEnd}</p>
+        <p>Remaining Days: ${item.remainingDays}</p>
+      </div>
+    `;
+  });
+}
+</script>
+
+</body>
+</html>
