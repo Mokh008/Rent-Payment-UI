@@ -161,7 +161,7 @@ select{
 
   <div class="main-card">
     <label>رقم المهندس (ID)</label>
-    <input id="engineerId" type="text">
+    <input id="engineerId" type="text" placeholder="مثال: 1001777">
     <button class="main-btn" onclick="loadData()">عرض البيانات</button>
     <div id="loading" class="loader"></div>
   </div>
@@ -170,8 +170,7 @@ select{
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzymVGTpHAyuaa6upDCWbeD5A2iGsjKtU4GjfU6F4gOvlYS5PHiFiEzAhefJ0hssQtKCA/exec";
-let paidItems = [];
+const API_URL = "PUT_YOUR_SCRIPT_URL_HERE";
 
 function formatDate(d){
   return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
@@ -179,6 +178,8 @@ function formatDate(d){
 
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
+  if(!id){ alert("أدخل رقم المهندس"); return; }
+
   document.getElementById("loading").style.display="block";
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
@@ -190,13 +191,26 @@ function loadData(){
 }
 
 function showData(data){
-  let html = `<button class="print-btn" onclick="printReceipts()">طباعة الإيصالات</button>
-  <div class="table-wrapper"><table><thead>
-  <tr>
-    <th>المكتب</th><th>الموقع</th><th>النوع</th><th>الإيجار</th>
-    <th>بداية</th><th>نهاية</th><th>المتبقي</th><th>المالك</th>
-    <th>الشهر</th><th>الدفع</th>
-  </tr></thead><tbody>`;
+  let html = `
+  <button class="print-btn" onclick="printReceipts()">طباعة الإيصالات</button>
+  <div class="table-wrapper">
+  <table>
+    <thead>
+      <tr>
+        <th>المكتب</th>
+        <th>الموقع</th>
+        <th>النوع</th>
+        <th>الإيجار</th>
+        <th>بداية</th>
+        <th>نهاية</th>
+        <th>المتبقي</th>
+        <th>المالك</th>
+        <th>الشهر</th>
+        <th>الدفع</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
 
   data.forEach(i=>{
     const k=i.assetName.replace(/\s/g,"_");
@@ -229,30 +243,48 @@ function showData(data){
 }
 
 function payNow(btn,item){
-  const m=document.getElementById("m_"+item.assetName.replace(/\s/g,"_")).value;
-  if(!m){ alert("اختر الشهر"); return; }
+  const month=document.getElementById(
+    "m_"+item.assetName.replace(/\s/g,"_")
+  ).value;
 
-  btn.innerText="تم الدفع";
-  btn.classList.add("paid");
-  btn.disabled=true;
-
-  paidItems.push({...item,month:m});
-}
-
-function printReceipts(){
-  if(paidItems.length===0){ alert("لا يوجد إيصالات"); return; }
+  if(!month){ alert("اختر الشهر"); return; }
 
   fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
-      action:"printBatch",
+      action:"confirmPayment",
       engineerId:document.getElementById("engineerId").value,
-      items:paidItems
+      assetName:item.assetName,
+      month:month
     })
   })
   .then(r=>r.json())
   .then(res=>{
-    if(res.pdfUrl) window.open(res.pdfUrl);
+    if(res.error){
+      alert(res.error);
+      return;
+    }
+    btn.innerText="تم الدفع";
+    btn.classList.add("paid");
+    btn.disabled=true;
+  });
+}
+
+function printReceipts(){
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"printBatch",
+      engineerId:document.getElementById("engineerId").value
+    })
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.pdfUrl){
+      window.open(res.pdfUrl);
+    }else{
+      alert("لا توجد إيصالات للطباعة");
+    }
   });
 }
 </script>
