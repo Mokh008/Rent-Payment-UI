@@ -31,7 +31,6 @@ body{
   max-width:1100px;
 }
 
-/* ===== Header ===== */
 .page-title{
   text-align:center;
   font-size:28px;
@@ -39,7 +38,6 @@ body{
   margin-bottom:20px;
 }
 
-/* ===== Login Card (Small) ===== */
 .main-card{
   background:#fff;
   border-radius:18px;
@@ -80,13 +78,6 @@ body{
   cursor:pointer;
 }
 
-#error{
-  margin-top:10px;
-  color:#DC2626;
-  font-size:13px;
-}
-
-/* ===== Loader ===== */
 .loader{
   width:36px;
   height:36px;
@@ -99,13 +90,11 @@ body{
 }
 @keyframes spin{ to{ transform:rotate(360deg);} }
 
-/* ===== Table ===== */
 .table-wrapper{
   background:#020617;
   border-radius:18px;
   padding:20px;
   color:#E5E7EB;
-  box-shadow:0 20px 40px rgba(0,0,0,.2);
 }
 
 table{
@@ -147,124 +136,124 @@ select{
   font-size:13px;
   cursor:pointer;
 }
+.pay-btn.paid{
+  background:#16A34A;
+  cursor:default;
+}
+
+.print-btn{
+  margin-bottom:15px;
+  padding:10px 16px;
+  border-radius:10px;
+  border:none;
+  background:#0F766E;
+  color:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-
-  <!-- Title -->
   <div class="page-title">نظام دفع الإيجارات</div>
 
-  <!-- Login -->
   <div class="main-card">
     <label>رقم المهندس (ID)</label>
-    <input id="engineerId" type="text" placeholder="مثال: 1001777">
+    <input id="engineerId" type="text">
     <button class="main-btn" onclick="loadData()">عرض البيانات</button>
-    <div id="error"></div>
     <div id="loading" class="loader"></div>
   </div>
 
-  <!-- Result -->
   <div id="result"></div>
-
 </div>
 
 <script>
-const API_URL =
-"https://script.google.com/macros/s/AKfycbz1J46xbhrp_1AT5y7Tws8oc3iTkhZTYodbo1gDekk0U4_MePlv1zWn05VmuaJIo866UA/exec";
+const API_URL = "PUT_YOUR_SCRIPT_URL_HERE";
+let paidItems = [];
 
 function formatDate(d){
-  if(!d) return "-";
-  return new Date(d).toLocaleDateString("ar-EG");
+  return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
 }
 
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
-  const error=document.getElementById("error");
-  const loading=document.getElementById("loading");
-  const result=document.getElementById("result");
-
-  error.innerText="";
-  result.innerHTML="";
-
-  if(!id){
-    error.innerText="من فضلك أدخل رقم المهندس";
-    return;
-  }
-
-  loading.style.display="block";
+  document.getElementById("loading").style.display="block";
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
-    .then(res=>res.json())
-    .then(data=>{
-      loading.style.display="none";
-      showData(data);
-    })
-    .catch(()=>{
-      loading.style.display="none";
-      error.innerText="خطأ في الاتصال بالسيرفر";
+    .then(r=>r.json())
+    .then(d=>{
+      document.getElementById("loading").style.display="none";
+      showData(d);
     });
 }
 
 function showData(data){
-  const result=document.getElementById("result");
+  let html = `<button class="print-btn" onclick="printReceipts()">طباعة الإيصالات</button>
+  <div class="table-wrapper"><table><thead>
+  <tr>
+    <th>المكتب</th><th>الموقع</th><th>النوع</th><th>الإيجار</th>
+    <th>بداية</th><th>نهاية</th><th>المتبقي</th><th>المالك</th>
+    <th>الشهر</th><th>الدفع</th>
+  </tr></thead><tbody>`;
 
-  if(!data || data.length===0){
-    result.innerHTML="<p style='text-align:center'>لا توجد بيانات</p>";
-    return;
-  }
-
-  let html=`
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>المكتب</th>
-          <th>الموقع</th>
-          <th>النوع</th>
-          <th>الإيجار</th>
-          <th>بداية العقد</th>
-          <th>نهاية العقد</th>
-          <th>الأيام المتبقية</th>
-          <th>اسم المؤجر</th>
-          <th>الشهر</th>
-          <th>الدفع</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  data.forEach(item=>{
-    const key=item.assetName.replace(/\s/g,"_");
+  data.forEach(i=>{
+    const k=i.assetName.replace(/\s/g,"_");
     html+=`
-      <tr>
-        <td>${item.assetName}</td>
-        <td>${item.location}</td>
-        <td>${item.assetType}</td>
-        <td>${item.monthlyRent}</td>
-        <td>${formatDate(item.contractStart)}</td>
-        <td>${formatDate(item.contractEnd)}</td>
-        <td>${item.remainingDays}</td>
-        <td class="owner">${item.ownerName}</td>
-        <td>
-          <select id="m_${key}">
-            <option value="">اختر الشهر</option>
-            <option>12-2025</option>
-            <option>01-2026</option>
-            <option>02-2026</option>
-          </select>
-        </td>
-        <td>
-          <button class="pay-btn">دفع</button>
-        </td>
-      </tr>
-    `;
+    <tr>
+      <td>${i.assetName}</td>
+      <td>${i.location}</td>
+      <td>${i.assetType}</td>
+      <td>${i.monthlyRent}</td>
+      <td>${formatDate(i.contractStart)}</td>
+      <td>${formatDate(i.contractEnd)}</td>
+      <td>${i.remainingDays}</td>
+      <td class="owner">${i.ownerName}</td>
+      <td>
+        <select id="m_${k}">
+          <option value="">اختر</option>
+          <option>12-2025</option>
+          <option>01-2026</option>
+          <option>02-2026</option>
+        </select>
+      </td>
+      <td>
+        <button class="pay-btn" onclick='payNow(this,${JSON.stringify(i)})'>دفع</button>
+      </td>
+    </tr>`;
   });
 
   html+=`</tbody></table></div>`;
-  result.innerHTML=html;
+  document.getElementById("result").innerHTML=html;
+}
+
+function payNow(btn,item){
+  const m=document.getElementById("m_"+item.assetName.replace(/\s/g,"_")).value;
+  if(!m){ alert("اختر الشهر"); return; }
+
+  btn.innerText="تم الدفع";
+  btn.classList.add("paid");
+  btn.disabled=true;
+
+  paidItems.push({...item,month:m});
+}
+
+function printReceipts(){
+  if(paidItems.length===0){ alert("لا يوجد إيصالات"); return; }
+
+  fetch(API_URL,{
+    method:"POST",
+    body:JSON.stringify({
+      action:"printBatch",
+      engineerId:document.getElementById("engineerId").value,
+      items:paidItems
+    })
+  })
+  .then(r=>r.json())
+  .then(res=>{
+    if(res.pdfUrl) window.open(res.pdfUrl);
+  });
 }
 </script>
 
