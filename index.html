@@ -78,18 +78,33 @@ body{
   cursor:pointer;
 }
 
-.loader{
-  width:36px;
-  height:36px;
-  border:4px solid #E5E7EB;
-  border-top:4px solid #020617;
-  border-radius:50%;
-  margin:20px auto;
-  animation:spin 1s linear infinite;
+/* ===== Loader ===== */
+.global-loader{
+  position:fixed;
+  inset:0;
+  background:rgba(2,6,23,.55);
   display:none;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  z-index:9999;
+}
+.spinner{
+  width:48px;
+  height:48px;
+  border:5px solid #CBD5E1;
+  border-top:5px solid #38BDF8;
+  border-radius:50%;
+  animation:spin 1s linear infinite;
+}
+.loader-text{
+  margin-top:12px;
+  color:#fff;
+  font-weight:700;
 }
 @keyframes spin{ to{ transform:rotate(360deg);} }
 
+/* ===== Table ===== */
 .table-wrapper{
   background:#020617;
   border-radius:18px;
@@ -156,42 +171,69 @@ select{
 
 <body>
 
+<!-- Global Loader -->
+<div id="globalLoader" class="global-loader">
+  <div class="spinner"></div>
+  <div class="loader-text">جاري التنفيذ...</div>
+</div>
+
 <div class="container">
+
   <div class="page-title">نظام دفع الإيجارات</div>
 
   <div class="main-card">
     <label>رقم المهندس (ID)</label>
     <input id="engineerId" type="text" placeholder="مثال: 1001777">
     <button class="main-btn" onclick="loadData()">عرض البيانات</button>
-    <div id="loading" class="loader"></div>
   </div>
 
   <div id="result"></div>
+
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxtfbjlH-eYsFw-NBCclYV2FlJ7adUOCz4ckZMy009MrwcTjoqu2LWrpPn55c9v97tb4g/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxt9LEFcfeZH4oAmqQ7sLrh9OccVpwPzs7z0q6aF1EM3IPS0j4IRDhveAVB49w0-_N_BQ/exec";
+
+/* ===== Loader helpers ===== */
+function showLoader(text){
+  document.querySelector(".loader-text").innerText=text||"جاري التنفيذ...";
+  document.getElementById("globalLoader").style.display="flex";
+}
+function hideLoader(){
+  document.getElementById("globalLoader").style.display="none";
+}
 
 function formatDate(d){
   return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
 }
 
+/* ===== Load Data ===== */
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
 
-  document.getElementById("loading").style.display="block";
+  showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
     .then(r=>r.json())
     .then(d=>{
-      document.getElementById("loading").style.display="none";
+      hideLoader();
       showData(d);
+    })
+    .catch(()=>{
+      hideLoader();
+      alert("خطأ في الاتصال");
     });
 }
 
+/* ===== Render Table ===== */
 function showData(data){
-  let html = `
+  if(!data || data.length===0){
+    document.getElementById("result").innerHTML="<p style='text-align:center'>لا توجد بيانات</p>";
+    return;
+  }
+
+  let html=`
   <button class="print-btn" onclick="printReceipts()">طباعة الإيصالات</button>
   <div class="table-wrapper">
   <table>
@@ -209,8 +251,7 @@ function showData(data){
         <th>الدفع</th>
       </tr>
     </thead>
-    <tbody>
-  `;
+    <tbody>`;
 
   data.forEach(i=>{
     const k=i.assetName.replace(/\s/g,"_");
@@ -242,12 +283,16 @@ function showData(data){
   document.getElementById("result").innerHTML=html;
 }
 
+/* ===== Pay ===== */
 function payNow(btn,item){
   const month=document.getElementById(
     "m_"+item.assetName.replace(/\s/g,"_")
   ).value;
 
   if(!month){ alert("اختر الشهر"); return; }
+
+  btn.disabled=true;
+  showLoader("جاري تسجيل الدفع...");
 
   fetch(API_URL,{
     method:"POST",
@@ -260,17 +305,26 @@ function payNow(btn,item){
   })
   .then(r=>r.json())
   .then(res=>{
+    hideLoader();
     if(res.error){
+      btn.disabled=false;
       alert(res.error);
       return;
     }
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
-    btn.disabled=true;
+  })
+  .catch(()=>{
+    hideLoader();
+    btn.disabled=false;
+    alert("خطأ أثناء الدفع");
   });
 }
 
+/* ===== Print ===== */
 function printReceipts(){
+  showLoader("جاري تجهيز ملف الإيصالات...");
+
   fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
@@ -280,11 +334,20 @@ function printReceipts(){
   })
   .then(r=>r.json())
   .then(res=>{
+    hideLoader();
+    if(res.error){
+      alert(res.error);
+      return;
+    }
     if(res.pdfUrl){
       window.open(res.pdfUrl);
     }else{
       alert("لا توجد إيصالات للطباعة");
     }
+  })
+  .catch(()=>{
+    hideLoader();
+    alert("خطأ أثناء الطباعة");
   });
 }
 </script>
