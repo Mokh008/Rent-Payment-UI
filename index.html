@@ -194,6 +194,9 @@ select{
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbxKRiod9-FG7RmcP5PkQd_x4Pdg-2mr2swGLsn-rWy_nAnziX5lA7aY2mYLfsx8bW_oOg/exec";
 
+/* ✅ Batch ID الحالي */
+let CURRENT_BATCH_ID = null;
+
 /* ===== Loader helpers ===== */
 function showLoader(text){
   document.querySelector(".loader-text").innerText=text||"جاري التنفيذ...";
@@ -211,6 +214,8 @@ function formatDate(d){
 function loadData(){
   const id=document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
+
+  CURRENT_BATCH_ID = null; // 🔄 reset
 
   showLoader("جاري تحميل البيانات...");
 
@@ -311,6 +316,10 @@ function payNow(btn,item){
       alert(res.error);
       return;
     }
+
+    /* ✅ حفظ Batch ID */
+    CURRENT_BATCH_ID = res.batchId;
+
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
   })
@@ -323,13 +332,20 @@ function payNow(btn,item){
 
 /* ===== Print ===== */
 function printReceipts(){
+
+  if(!CURRENT_BATCH_ID){
+    alert("لا توجد دفعة جديدة للطباعة");
+    return;
+  }
+
   showLoader("جاري تجهيز ملف الإيصالات...");
 
   fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
       action:"printBatch",
-      engineerId:document.getElementById("engineerId").value
+      engineerId:document.getElementById("engineerId").value,
+      batchId: CURRENT_BATCH_ID
     })
   })
   .then(r=>r.json())
