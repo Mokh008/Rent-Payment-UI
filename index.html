@@ -191,12 +191,9 @@ select{
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbzq78u_s2o_e9eoOD8gLTV5uoiPxI2iqcnGC2hXsWc-N-9uTgAxE1lQaVN68-pVpL13Rw/exec";
+/* 🔴 حط هنا لينك الـ Web App الجديد */
+const API_URL = "https://script.google.com/macros/s/AKfycbz6IQECOOexC2BSO4qJ6r-ELtOaUqvy57du_7v6VmQK2pDb0Rmt9wGHx52tMyA4Euac5A/exec";
 
-/* ⭐ FIX: Array لكل Batch IDs */
-let CURRENT_BATCH_IDS = [];
-
-/* Loader */
 function showLoader(text){
   document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
   document.getElementById("globalLoader").style.display="flex";
@@ -209,12 +206,11 @@ function formatDate(d){
   return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
 }
 
-/* Load Data */
+/* Load Assets */
 function loadData(){
   const id = document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
 
-  CURRENT_BATCH_IDS = []; // reset
   showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
@@ -229,7 +225,7 @@ function loadData(){
     });
 }
 
-/* Render */
+/* Render Table */
 function renderTable(data){
 
   if(!data || !data.length){
@@ -288,7 +284,7 @@ function renderTable(data){
   document.getElementById("result").innerHTML = html;
 }
 
-/* Pay */
+/* Confirm Payment */
 function payNow(btn,item){
 
   const month = document.getElementById(
@@ -302,8 +298,8 @@ function payNow(btn,item){
 
   fetch(API_URL,{
     method:"POST",
-    body:JSON.stringify({
-      action:"confirmPayment",
+    body: JSON.stringify({
+      action: "confirmPayment",
       engineerId: document.getElementById("engineerId").value,
       assetName: item.assetName,
       month: month
@@ -319,9 +315,6 @@ function payNow(btn,item){
       return;
     }
 
-    /* ⭐ حفظ كل Batch IDs */
-    CURRENT_BATCH_IDS.push(res.batchId);
-
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
   })
@@ -332,11 +325,19 @@ function payNow(btn,item){
   });
 }
 
-/* Print */
+/* ✅ PRINT RECEIPTS – الاسم الصحيح */
 function printReceipts(){
 
-  if(!CURRENT_BATCH_IDS.length){
-    alert("لا توجد دفعات للطباعة");
+  const engineerId = document.getElementById("engineerId").value.trim();
+  if(!engineerId){
+    alert("أدخل رقم المهندس");
+    return;
+  }
+
+  /* أول شهر متاخد من أي صف (كلهم نفس الشهر) */
+  const monthSelect = document.querySelector("select[id^='m_']");
+  if(!monthSelect || !monthSelect.value){
+    alert("اختر الشهر أولاً");
     return;
   }
 
@@ -344,10 +345,10 @@ function printReceipts(){
 
   fetch(API_URL,{
     method:"POST",
-    body:JSON.stringify({
-      action:"printBatch",
-      engineerId: document.getElementById("engineerId").value,
-      batchIds: CURRENT_BATCH_IDS
+    body: JSON.stringify({
+      action: "printReceipts",   // ⭐ الاسم الصح
+      engineerId: engineerId,
+      month: monthSelect.value
     })
   })
   .then(r=>r.json())
@@ -360,7 +361,6 @@ function printReceipts(){
     }
 
     if(res.pdfUrl){
-      // الحل المضمون
       window.location.href = res.pdfUrl;
     }else{
       alert("لم يتم إنشاء ملف الإيصالات");
