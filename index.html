@@ -191,8 +191,11 @@ select{
 </div>
 
 <script>
-/* 🔴 حط هنا لينك الـ Web App الجديد */
+/* 🔴 لينك الـ Web App */
 const API_URL = "https://script.google.com/macros/s/AKfycbzwFo2Xz9LI7gMBJw7fePr0EkgNFNj0ovePVpzbiLGPCwl9942WCRoTA4D73TVDHya4Gg/exec";
+
+/* ✅ تخزين الشهور اللي اتدفعت */
+let paidMonths = new Set();
 
 function showLoader(text){
   document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
@@ -211,6 +214,7 @@ function loadData(){
   const id = document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
 
+  paidMonths.clear();
   showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
@@ -317,6 +321,9 @@ function payNow(btn,item){
 
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
+
+    /* ✅ تسجيل الشهر المدفوع */
+    paidMonths.add(month);
   })
   .catch(()=>{
     hideLoader();
@@ -325,7 +332,7 @@ function payNow(btn,item){
   });
 }
 
-/* ✅ PRINT RECEIPTS – الاسم الصحيح */
+/* ✅ PRINT RECEIPTS – Fixed */
 function printReceipts(){
 
   const engineerId = document.getElementById("engineerId").value.trim();
@@ -334,21 +341,21 @@ function printReceipts(){
     return;
   }
 
-  /* أول شهر متاخد من أي صف (كلهم نفس الشهر) */
-  const monthSelect = document.querySelector("select[id^='m_']");
-  if(!monthSelect || !monthSelect.value){
-    alert("اختر الشهر أولاً");
+  if(paidMonths.size === 0){
+    alert("لا توجد إيصالات مدفوعة للطباعة");
     return;
   }
+
+  const month = Array.from(paidMonths)[0];
 
   showLoader("جاري تجهيز ملف الإيصالات...");
 
   fetch(API_URL,{
     method:"POST",
     body: JSON.stringify({
-      action: "printReceipts",   // ⭐ الاسم الصح
+      action: "printReceipts",
       engineerId: engineerId,
-      month: monthSelect.value
+      month: month
     })
   })
   .then(r=>r.json())
