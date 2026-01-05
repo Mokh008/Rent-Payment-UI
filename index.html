@@ -240,7 +240,7 @@ function showData(data){
   }
 
   let html = `
-  <button class="print-btn" onclick="printReceipts()">طباعة الإيصالات</button>
+  <button class="print-btn" onclick="printReceipts()">تحميل الإيصالات PDF</button>
   <div class="table-wrapper">
   <table>
     <thead>
@@ -332,15 +332,15 @@ function payNow(btn,item){
   });
 }
 
-/* ===== Print (FIXED) ===== */
+/* ===== Download PDF ===== */
 function printReceipts(){
 
   if(!CURRENT_BATCH_ID){
-    alert("لا توجد دفعة جديدة للطباعة");
+    alert("لا توجد دفعة جديدة للتحميل");
     return;
   }
 
-  showLoader("جاري تجهيز ملف الإيصالات...");
+  showLoader("جاري تحميل ملف الإيصالات...");
 
   fetch(API_URL,{
     method:"POST",
@@ -362,18 +362,17 @@ function printReceipts(){
     if(res.pdfUrl){
       const a = document.createElement("a");
       a.href = res.pdfUrl;
-      a.target = "_blank";
-      a.rel = "noopener noreferrer";
+      a.download = "Rent_Receipts.pdf";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
     }else{
-      alert("لا توجد إيصالات للطباعة");
+      alert("لم يتم إنشاء ملف PDF");
     }
   })
   .catch(err=>{
     hideLoader();
-    alert("فشل فتح ملف الإيصالات");
+    alert("تعذر تحميل ملف الإيصالات");
     console.error(err);
   });
 }
