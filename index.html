@@ -78,7 +78,7 @@ body{
   cursor:pointer;
 }
 
-/* ===== Loader ===== */
+/* Loader */
 .global-loader{
   position:fixed;
   inset:0;
@@ -104,7 +104,7 @@ body{
 }
 @keyframes spin{ to{ transform:rotate(360deg);} }
 
-/* ===== Table ===== */
+/* Table */
 .table-wrapper{
   background:#020617;
   border-radius:18px;
@@ -171,7 +171,6 @@ select{
 
 <body>
 
-<!-- Loader -->
 <div id="globalLoader" class="global-loader">
   <div class="spinner"></div>
   <div class="loader-text">جاري التنفيذ...</div>
@@ -192,11 +191,12 @@ select{
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyIpQ_r5sYnm7vg0AyMqgLvf32YVpK_wR7jzRCK_roBN5y8O6Dwl1B94WqOoeOqD7KH2Q/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwns31x9-2I7iQtdaZIxtnaRj7wfD_9__2Fh7WVfh4K6kSa7gp3kBUYlyMVV8tKasOh1g/exec";
 
-let CURRENT_BATCH_ID = null;
+/* ⭐ FIX: Array لكل Batch IDs */
+let CURRENT_BATCH_IDS = [];
 
-/* ===== Loader ===== */
+/* Loader */
 function showLoader(text){
   document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
   document.getElementById("globalLoader").style.display="flex";
@@ -209,38 +209,37 @@ function formatDate(d){
   return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
 }
 
-/* ===== Load Data ===== */
+/* Load Data */
 function loadData(){
   const id = document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
 
-  CURRENT_BATCH_ID = null;
+  CURRENT_BATCH_IDS = []; // reset
   showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
     .then(r=>r.json())
     .then(d=>{
       hideLoader();
-      showData(d);
+      renderTable(d);
     })
-    .catch(err=>{
+    .catch(()=>{
       hideLoader();
       alert("خطأ في الاتصال");
-      console.error(err);
     });
 }
 
-/* ===== Render Table ===== */
-function showData(data){
+/* Render */
+function renderTable(data){
 
-  if(!data || data.length===0){
+  if(!data || !data.length){
     document.getElementById("result").innerHTML =
       "<p style='text-align:center'>لا توجد بيانات</p>";
     return;
   }
 
   let html = `
-  <button class="print-btn" onclick="printReceipts()">تحميل الإيصالات PDF</button>
+  <button class="print-btn" onclick="printReceipts()">تحميل ملف الإيصالات</button>
   <div class="table-wrapper">
   <table>
     <thead>
@@ -260,7 +259,7 @@ function showData(data){
     <tbody>`;
 
   data.forEach(i=>{
-    const k = i.assetName.replace(/\s/g,"_");
+    const key = i.assetName.replace(/\s/g,"_");
     html += `
     <tr>
       <td>${i.assetName}</td>
@@ -272,7 +271,7 @@ function showData(data){
       <td>${i.remainingDays}</td>
       <td class="owner">${i.ownerName}</td>
       <td>
-        <select id="m_${k}">
+        <select id="m_${key}">
           <option value="">اختر</option>
           <option>12-2025</option>
           <option>01-2026</option>
@@ -289,7 +288,7 @@ function showData(data){
   document.getElementById("result").innerHTML = html;
 }
 
-/* ===== Pay ===== */
+/* Pay */
 function payNow(btn,item){
 
   const month = document.getElementById(
@@ -305,9 +304,9 @@ function payNow(btn,item){
     method:"POST",
     body:JSON.stringify({
       action:"confirmPayment",
-      engineerId:document.getElementById("engineerId").value,
-      assetName:item.assetName,
-      month:month
+      engineerId: document.getElementById("engineerId").value,
+      assetName: item.assetName,
+      month: month
     })
   })
   .then(r=>r.json())
@@ -320,34 +319,35 @@ function payNow(btn,item){
       return;
     }
 
-    CURRENT_BATCH_ID = res.batchId;
+    /* ⭐ حفظ كل Batch IDs */
+    CURRENT_BATCH_IDS.push(res.batchId);
+
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
   })
-  .catch(err=>{
+  .catch(()=>{
     hideLoader();
     btn.disabled=false;
     alert("خطأ أثناء الدفع");
-    console.error(err);
   });
 }
 
-/* ===== Download PDF ===== */
+/* Print */
 function printReceipts(){
 
-  if(!CURRENT_BATCH_ID){
-    alert("لا توجد دفعة جديدة للتحميل");
+  if(!CURRENT_BATCH_IDS.length){
+    alert("لا توجد دفعات للطباعة");
     return;
   }
 
-  showLoader("جاري تحميل ملف الإيصالات...");
+  showLoader("جاري تجهيز ملف الإيصالات...");
 
   fetch(API_URL,{
     method:"POST",
     body:JSON.stringify({
       action:"printBatch",
-      engineerId:document.getElementById("engineerId").value,
-      batchId: CURRENT_BATCH_ID
+      engineerId: document.getElementById("engineerId").value,
+      batchIds: CURRENT_BATCH_IDS
     })
   })
   .then(r=>r.json())
@@ -360,20 +360,15 @@ function printReceipts(){
     }
 
     if(res.pdfUrl){
-      const a = document.createElement("a");
-      a.href = res.pdfUrl;
-      a.download = "Rent_Receipts.pdf";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // الحل المضمون
+      window.location.href = res.pdfUrl;
     }else{
-      alert("لم يتم إنشاء ملف PDF");
+      alert("لم يتم إنشاء ملف الإيصالات");
     }
   })
-  .catch(err=>{
+  .catch(()=>{
     hideLoader();
-    alert("تعذر تحميل ملف الإيصالات");
-    console.error(err);
+    alert("تعذر فتح ملف الإيصالات");
   });
 }
 </script>
