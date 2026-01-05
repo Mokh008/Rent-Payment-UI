@@ -171,7 +171,7 @@ select{
 
 <body>
 
-<!-- Global Loader -->
+<!-- Loader -->
 <div id="globalLoader" class="global-loader">
   <div class="spinner"></div>
   <div class="loader-text">جاري التنفيذ...</div>
@@ -194,12 +194,11 @@ select{
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbzCbLEPNKpsnIb5e_s-7GvXQ9z4tX4_p9wWnOeuqqzfw9W7OZXk8oa9J_y5B6a1YOV4PA/exec";
 
-/* ✅ Batch ID الحالي */
 let CURRENT_BATCH_ID = null;
 
-/* ===== Loader helpers ===== */
+/* ===== Loader ===== */
 function showLoader(text){
-  document.querySelector(".loader-text").innerText=text||"جاري التنفيذ...";
+  document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
   document.getElementById("globalLoader").style.display="flex";
 }
 function hideLoader(){
@@ -212,11 +211,10 @@ function formatDate(d){
 
 /* ===== Load Data ===== */
 function loadData(){
-  const id=document.getElementById("engineerId").value.trim();
+  const id = document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
 
-  CURRENT_BATCH_ID = null; // 🔄 reset
-
+  CURRENT_BATCH_ID = null;
   showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
@@ -225,20 +223,23 @@ function loadData(){
       hideLoader();
       showData(d);
     })
-    .catch(()=>{
+    .catch(err=>{
       hideLoader();
       alert("خطأ في الاتصال");
+      console.error(err);
     });
 }
 
 /* ===== Render Table ===== */
 function showData(data){
+
   if(!data || data.length===0){
-    document.getElementById("result").innerHTML="<p style='text-align:center'>لا توجد بيانات</p>";
+    document.getElementById("result").innerHTML =
+      "<p style='text-align:center'>لا توجد بيانات</p>";
     return;
   }
 
-  let html=`
+  let html = `
   <button class="print-btn" onclick="printReceipts()">طباعة الإيصالات</button>
   <div class="table-wrapper">
   <table>
@@ -259,8 +260,8 @@ function showData(data){
     <tbody>`;
 
   data.forEach(i=>{
-    const k=i.assetName.replace(/\s/g,"_");
-    html+=`
+    const k = i.assetName.replace(/\s/g,"_");
+    html += `
     <tr>
       <td>${i.assetName}</td>
       <td>${i.location}</td>
@@ -284,19 +285,20 @@ function showData(data){
     </tr>`;
   });
 
-  html+=`</tbody></table></div>`;
-  document.getElementById("result").innerHTML=html;
+  html += "</tbody></table></div>";
+  document.getElementById("result").innerHTML = html;
 }
 
 /* ===== Pay ===== */
 function payNow(btn,item){
-  const month=document.getElementById(
+
+  const month = document.getElementById(
     "m_"+item.assetName.replace(/\s/g,"_")
   ).value;
 
   if(!month){ alert("اختر الشهر"); return; }
 
-  btn.disabled=true;
+  btn.disabled = true;
   showLoader("جاري تسجيل الدفع...");
 
   fetch(API_URL,{
@@ -311,26 +313,26 @@ function payNow(btn,item){
   .then(r=>r.json())
   .then(res=>{
     hideLoader();
+
     if(res.error){
       btn.disabled=false;
       alert(res.error);
       return;
     }
 
-    /* ✅ حفظ Batch ID */
     CURRENT_BATCH_ID = res.batchId;
-
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
   })
-  .catch(()=>{
+  .catch(err=>{
     hideLoader();
     btn.disabled=false;
     alert("خطأ أثناء الدفع");
+    console.error(err);
   });
 }
 
-/* ===== Print ===== */
+/* ===== Print (FIXED) ===== */
 function printReceipts(){
 
   if(!CURRENT_BATCH_ID){
@@ -351,19 +353,28 @@ function printReceipts(){
   .then(r=>r.json())
   .then(res=>{
     hideLoader();
+
     if(res.error){
       alert(res.error);
       return;
     }
+
     if(res.pdfUrl){
-      window.open(res.pdfUrl);
+      const a = document.createElement("a");
+      a.href = res.pdfUrl;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }else{
       alert("لا توجد إيصالات للطباعة");
     }
   })
-  .catch(()=>{
+  .catch(err=>{
     hideLoader();
-    alert("خطأ أثناء الطباعة");
+    alert("فشل فتح ملف الإيصالات");
+    console.error(err);
   });
 }
 </script>
