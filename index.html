@@ -197,6 +197,23 @@ const API_URL = "https://script.google.com/macros/s/AKfycbzSHebSj0X9jFXs0VYxLykn
 /* ✅ تخزين الشهور اللي اتدفعت */
 let paidMonths = new Set();
 
+/* ✅ دالة توليد الشهور (ديسمبر 2025 + كل 2026) */
+function generateMonths(startYear, startMonth, count) {
+  const months = [];
+  let y = startYear;
+  let m = startMonth;
+
+  for (let i = 0; i < count; i++) {
+    months.push(String(m).padStart(2,"0") + "-" + y);
+    m++;
+    if (m > 12) {
+      m = 1;
+      y++;
+    }
+  }
+  return months;
+}
+
 function showLoader(text){
   document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
   document.getElementById("globalLoader").style.display="flex";
@@ -238,6 +255,8 @@ function renderTable(data){
     return;
   }
 
+  const monthsList = generateMonths(2025, 12, 13);
+
   let html = `
   <button class="print-btn" onclick="printReceipts()">تحميل ملف الإيصالات</button>
   <div class="table-wrapper">
@@ -273,9 +292,7 @@ function renderTable(data){
       <td>
         <select id="m_${key}">
           <option value="">اختر</option>
-          <option>12-2025</option>
-          <option>01-2026</option>
-          <option>02-2026</option>
+          ${monthsList.map(m=>`<option value="${m}">${m}</option>`).join("")}
         </select>
       </td>
       <td>
@@ -321,8 +338,6 @@ function payNow(btn,item){
 
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
-
-    /* ✅ تسجيل الشهر المدفوع */
     paidMonths.add(month);
   })
   .catch(()=>{
@@ -332,7 +347,7 @@ function payNow(btn,item){
   });
 }
 
-/* ✅ PRINT RECEIPTS – Fixed */
+/* Print Receipts */
 function printReceipts(){
 
   const engineerId = document.getElementById("engineerId").value.trim();
