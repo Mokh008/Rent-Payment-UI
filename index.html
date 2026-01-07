@@ -214,6 +214,12 @@ function generateMonths(startYear, startMonth, count) {
   return months;
 }
 
+/* ✅ تحويل الشهر لرقم للمقارنة */
+function monthToNumber(m){
+  const [mm, yy] = m.split("-");
+  return (parseInt(yy) * 12) + parseInt(mm);
+}
+
 function showLoader(text){
   document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
   document.getElementById("globalLoader").style.display="flex";
@@ -312,7 +318,20 @@ function payNow(btn,item){
     "m_"+item.assetName.replace(/\s/g,"_")
   ).value;
 
-  if(!month){ alert("اختر الشهر"); return; }
+  if(!month){
+    alert("اختر الشهر");
+    return;
+  }
+
+  /* ✅ منع الدفع بعد نهاية العقد */
+  const selectedMonthNum = monthToNumber(month);
+  const endDate = new Date(item.contractEnd);
+  const contractEndMonth = (endDate.getFullYear() * 12) + (endDate.getMonth() + 1);
+
+  if(selectedMonthNum > contractEndMonth){
+    alert("لا يمكن الدفع بعد نهاية العقد");
+    return;
+  }
 
   btn.disabled = true;
   showLoader("جاري تسجيل الدفع...");
