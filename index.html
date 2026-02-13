@@ -196,6 +196,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbxLclZm2a1wQek8NCSoecSt
 
 /* ✅ تخزين الشهور اللي اتدفعت */
 let paidMonths = new Set();
+let lastPaidMonth = null; // ✅ جديد
 
 /* ✅ دالة توليد الشهور (ديسمبر 2025 + كل 2026) */
 function generateMonths(startYear, startMonth, count) {
@@ -214,7 +215,6 @@ function generateMonths(startYear, startMonth, count) {
   return months;
 }
 
-/* ✅ تحويل الشهر لرقم للمقارنة */
 function monthToNumber(m){
   const [mm, yy] = m.split("-");
   return (parseInt(yy) * 12) + parseInt(mm);
@@ -232,12 +232,12 @@ function formatDate(d){
   return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
 }
 
-/* Load Assets */
 function loadData(){
   const id = document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
 
   paidMonths.clear();
+  lastPaidMonth = null; // ✅ إعادة تعيين
   showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
@@ -252,7 +252,6 @@ function loadData(){
     });
 }
 
-/* Render Table */
 function renderTable(data){
 
   if(!data || !data.length){
@@ -296,7 +295,7 @@ function renderTable(data){
       <td>${i.remainingDays}</td>
       <td class="owner">${i.ownerName}</td>
       <td>
-        <select id="m_${key}">
+        <select id="m_${key}" onchange="resetPayButton(this)">
           <option value="">اختر</option>
           ${monthsList.map(m=>`<option value="${m}">${m}</option>`).join("")}
         </select>
@@ -311,7 +310,15 @@ function renderTable(data){
   document.getElementById("result").innerHTML = html;
 }
 
-/* Confirm Payment */
+/* ✅ جديد */
+function resetPayButton(select){
+  const row = select.closest("tr");
+  const btn = row.querySelector(".pay-btn");
+  btn.disabled = false;
+  btn.innerText = "دفع";
+  btn.classList.remove("paid");
+}
+
 function payNow(btn,item){
 
   const month = document.getElementById(
@@ -323,7 +330,6 @@ function payNow(btn,item){
     return;
   }
 
-  /* ✅ منع الدفع بعد نهاية العقد */
   const selectedMonthNum = monthToNumber(month);
   const endDate = new Date(item.contractEnd);
   const contractEndMonth = (endDate.getFullYear() * 12) + (endDate.getMonth() + 1);
@@ -358,6 +364,7 @@ function payNow(btn,item){
     btn.innerText="تم الدفع";
     btn.classList.add("paid");
     paidMonths.add(month);
+    lastPaidMonth = month; // ✅ تخزين آخر شهر
   })
   .catch(()=>{
     hideLoader();
@@ -366,7 +373,6 @@ function payNow(btn,item){
   });
 }
 
-/* Print Receipts */
 function printReceipts(){
 
   const engineerId = document.getElementById("engineerId").value.trim();
@@ -375,12 +381,12 @@ function printReceipts(){
     return;
   }
 
-  if(paidMonths.size === 0){
+  if(!lastPaidMonth){
     alert("لا توجد إيصالات مدفوعة للطباعة");
     return;
   }
 
-  const month = Array.from(paidMonths)[0];
+  const month = lastPaidMonth; // ✅ آخر شهر فقط
 
   showLoader("جاري تجهيز ملف الإيصالات...");
 
