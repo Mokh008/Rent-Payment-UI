@@ -1,292 +1,173 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<title>نظام دفع الإيجارات</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام دفع الإيجارات — MK Nexus</title>
+<link rel="stylesheet" href="mk-theme.css">
 <style>
-:root{
-  --bg:#F1F5F9;
-  --text:#020617;
-  --border:#CBD5E1;
-  --dark:#020617;
+body { display:block; }
+
+.page-wrap {
+  min-height: 100vh;
+  padding: 0 clamp(12px,3vw,40px) 60px;
 }
 
-*{ box-sizing:border-box; }
-
-body{
-  margin:0;
-  min-height:100vh;
-  background:var(--bg);
-  font-family:"Segoe UI",Tahoma,sans-serif;
-  color:var(--text);
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  padding:30px 15px;
+/* ── Search card ── */
+.search-card {
+  width: min(440px,100%);
+  margin: 28px auto;
+  padding: clamp(22px,3vw,36px);
 }
 
-.container{
-  width:100%;
-  max-width:1100px;
-}
+/* ── Table wrapper override ── */
+.mk-table th { white-space: nowrap; }
+.mk-table td { white-space: nowrap; }
 
-.page-title{
-  text-align:center;
-  font-size:28px;
-  font-weight:800;
-  margin-bottom:20px;
-}
+.owner-cell { color: var(--warning); font-weight:600; }
 
-.main-card{
-  background:#fff;
-  border-radius:18px;
-  padding:22px 20px;
-  box-shadow:0 12px 25px rgba(0,0,0,.08);
-  text-align:center;
-  margin-bottom:25px;
-  max-width:420px;
-  margin-left:auto;
-  margin-right:auto;
+/* ── Pay button states ── */
+.pay-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  background: linear-gradient(135deg, #2563eb, #38bdf8);
+  color:#fff; border:none; border-radius:8px; cursor:pointer;
+  font-weight:600; transition:.2s;
 }
+.pay-btn:hover:not(.paid):not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 18px rgba(37,99,235,.4); }
+.pay-btn.paid { background:linear-gradient(135deg,#16a34a,#4ade80); cursor:default; }
+.pay-btn:disabled { opacity:.5; cursor:not-allowed; }
 
-.main-card label{
-  display:block;
-  text-align:right;
-  font-weight:600;
-  margin-bottom:6px;
+/* ── Month select in table ── */
+.mk-table .month-sel {
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: rgba(8,13,24,.7);
+  border: 1px solid var(--border);
+  color: var(--text); font-size:13px; outline:none;
+  transition: border-color .2s;
 }
+.mk-table .month-sel:focus { border-color: var(--accent); }
 
-.main-card input{
-  width:100%;
-  padding:14px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  font-size:15px;
+/* ── Print button ── */
+.print-btn {
+  display: flex; align-items:center; gap:8px;
+  padding: 9px 18px; margin-bottom:16px;
+  border-radius: var(--r-sm); border:none;
+  background: linear-gradient(135deg,#0f766e,#2dd4bf);
+  color:#fff; font-weight:700; font-size:13px; cursor:pointer;
+  transition:.25s;
 }
+.print-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(45,212,191,.3); }
 
-.main-btn{
-  margin-top:15px;
-  width:100%;
-  padding:14px;
-  border-radius:14px;
-  border:none;
-  background:var(--dark);
-  color:#fff;
-  font-size:16px;
-  font-weight:700;
-  cursor:pointer;
-}
+/* ── Remaining days badge ── */
+.days-ok    { color:var(--success); font-weight:600; }
+.days-warn  { color:var(--warning); font-weight:600; }
+.days-crit  { color:var(--danger);  font-weight:600; }
 
-.global-loader{
-  position:fixed;
-  inset:0;
-  background:rgba(2,6,23,.55);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  z-index:9999;
-}
-.spinner{
-  width:48px;
-  height:48px;
-  border:5px solid #CBD5E1;
-  border-top:5px solid #38BDF8;
-  border-radius:50%;
-  animation:spin 1s linear infinite;
-}
-.loader-text{
-  margin-top:12px;
-  color:#fff;
-  font-weight:700;
-}
-@keyframes spin{ to{ transform:rotate(360deg);} }
-
-.table-wrapper{
-  background:#020617;
-  border-radius:18px;
-  padding:20px;
-  color:#E5E7EB;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  font-size:14px;
-}
-
-th,td{
-  padding:12px;
-  text-align:center;
-}
-
-th{
-  color:#93C5FD;
-  border-bottom:1px solid #1E293B;
-}
-
-tr{
-  border-bottom:1px solid #1E293B;
-}
-
-.owner{
-  color:#FDE68A;
-  font-weight:600;
-}
-
-select{
-  padding:6px 8px;
-  border-radius:8px;
-}
-
-.pay-btn{
-  padding:6px 12px;
-  border-radius:8px;
-  border:none;
-  background:#2563EB;
-  color:#fff;
-  font-size:13px;
-  cursor:pointer;
-}
-.pay-btn.paid{
-  background:#16A34A;
-  cursor:default;
-}
-
-.print-btn{
-  margin-bottom:15px;
-  padding:10px 16px;
-  border-radius:10px;
-  border:none;
-  background:#0F766E;
-  color:#fff;
-  font-weight:700;
-  cursor:pointer;
-}
+/* ── Table scroll on mobile ── */
+.table-scroll { overflow-x:auto; border-radius:var(--r-lg); }
 </style>
 </head>
-
 <body>
 
-<div id="globalLoader" class="global-loader">
-  <div class="spinner"></div>
-  <div class="loader-text">جاري التنفيذ...</div>
+<div id="mk-bg"></div>
+<div id="mk-overlay"></div>
+<div class="starfall">
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
 </div>
 
-<div class="container">
+<!-- HEADER -->
+<header class="mk-header">
+  <div class="mk-header-brand">
+    <span class="mk-logo" style="font-size:20px">MK NEXUS</span>
+    <div class="mk-header-sep"></div>
+    <span class="mk-header-title">نظام دفع الإيجارات</span>
+  </div>
+</header>
 
-  <div class="page-title">نظام دفع الإيجارات</div>
+<div class="page-wrap">
 
-  <div class="main-card">
-    <label>رقم المهندس (ID)</label>
-    <input id="engineerId" type="text" placeholder="مثال: 1001777">
-    <button class="main-btn" onclick="loadData()">عرض البيانات</button>
+  <!-- Search -->
+  <div class="mk-card search-card">
+    <div class="mk-field">
+      <label class="mk-label">رقم المهندس (ID)</label>
+      <input class="mk-input" id="engineerId" type="text" placeholder="مثال: 1001777">
+    </div>
+    <button class="mk-btn" style="width:100%" onclick="loadData()">عرض البيانات</button>
   </div>
 
+  <!-- Results -->
   <div id="result"></div>
 
 </div>
 
+<!-- LOADER -->
+<div id="globalLoader" class="mk-loader">
+  <div class="mk-spinner"></div>
+  <div class="mk-loader-text" id="loaderText">جاري التنفيذ...</div>
+</div>
+
+<!-- ══════════ SCRIPT (unchanged logic) ══════════ -->
 <script>
-
 const API_URL = "https://script.google.com/macros/s/AKfycbymN-eiB6AR8LsK31ssWhYtCSq7uzk2qYU3LVLKkx1HM_OhRxa7zC10zFmj47zFDsaAUg/exec";
-
-let paidMonths = new Set();
 let lastPaidMonth = null;
 
 function generateMonths(startYear, startMonth, count) {
-  const months = [];
-  let y = startYear;
-  let m = startMonth;
-  for (let i = 0; i < count; i++) {
-    months.push(String(m).padStart(2,"0") + "-" + y);
-    m++;
-    if (m > 12) { m = 1; y++; }
+  const months=[]; let y=startYear, m=startMonth;
+  for(let i=0;i<count;i++){
+    months.push(String(m).padStart(2,"0")+"-"+y);
+    m++; if(m>12){m=1;y++;}
   }
   return months;
 }
 
-function monthToNumber(m){
-  const [mm, yy] = m.split("-");
-  return (parseInt(yy) * 12) + parseInt(mm);
-}
-
-function showLoader(text){
-  document.querySelector(".loader-text").innerText = text || "جاري التنفيذ...";
+function showLoader(txt){
+  document.getElementById("loaderText").innerText = txt||"جاري التنفيذ...";
   document.getElementById("globalLoader").style.display="flex";
 }
-function hideLoader(){
-  document.getElementById("globalLoader").style.display="none";
+function hideLoader(){ document.getElementById("globalLoader").style.display="none"; }
+
+function formatDate(d){ return d ? new Date(d).toLocaleDateString("ar-EG") : "-"; }
+
+function daysClass(n){
+  const v = parseInt(n);
+  if(isNaN(v)) return "";
+  if(v<=30)  return "days-crit";
+  if(v<=90)  return "days-warn";
+  return "days-ok";
 }
 
-function formatDate(d){
-  return d ? new Date(d).toLocaleDateString("ar-EG") : "-";
-}
-
-/* ✅ التعديل هنا فقط */
 function loadData(){
   const id = document.getElementById("engineerId").value.trim();
   if(!id){ alert("أدخل رقم المهندس"); return; }
-
-  paidMonths.clear();
   lastPaidMonth = null;
-
   showLoader("جاري تحميل البيانات...");
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
     .then(r=>r.json())
-    .then(d=>{
-      hideLoader();
-
-      // لو السيرفر بيرجع الشكل الجديد
-      if(d.assets){
-        renderTable(d.assets);
-      }
-      // لو بيرجع الشكل القديم
-      else{
-        renderTable(d);
-      }
-    })
-    .catch(()=>{
-      hideLoader();
-      alert("خطأ في الاتصال");
-    });
+    .then(d=>{ hideLoader(); renderTable(d.assets||d); })
+    .catch(()=>{ hideLoader(); alert("خطأ في الاتصال"); });
 }
 
 function renderTable(data){
-
-  if(!data || !data.length){
-    document.getElementById("result").innerHTML =
-      "<p style='text-align:center'>لا توجد بيانات</p>";
+  const result = document.getElementById("result");
+  if(!data||!data.length){
+    result.innerHTML='<p style="text-align:center;color:var(--muted);padding:40px">لا توجد بيانات</p>';
     return;
   }
+  const monthsList = generateMonths(2025,12,13);
 
-  const monthsList = generateMonths(2025, 12, 13);
-
-  let html = `
-  <button class="print-btn" onclick="printReceipts()">تحميل ملف الإيصالات</button>
-  <div class="table-wrapper">
-  <table>
-    <thead>
-      <tr>
-        <th>المكتب</th>
-        <th>الموقع</th>
-        <th>النوع</th>
-        <th>الإيجار</th>
-        <th>بداية</th>
-        <th>نهاية</th>
-        <th>المتبقي</th>
-        <th>المالك</th>
-        <th>الشهر</th>
-        <th>الدفع</th>
-      </tr>
-    </thead>
-    <tbody>`;
-
+  let rows = "";
   data.forEach(i=>{
     const key = i.assetName.replace(/\s/g,"_");
-    html += `
+    const dc  = daysClass(i.remainingDays);
+    rows += `
     <tr>
       <td>${i.assetName}</td>
       <td>${i.location}</td>
@@ -294,10 +175,10 @@ function renderTable(data){
       <td>${i.monthlyRent}</td>
       <td>${formatDate(i.contractStart)}</td>
       <td>${formatDate(i.contractEnd)}</td>
-      <td>${i.remainingDays}</td>
-      <td class="owner">${i.ownerName}</td>
+      <td class="${dc}">${i.remainingDays}</td>
+      <td class="owner-cell">${i.ownerName}</td>
       <td>
-        <select id="m_${key}">
+        <select class="month-sel" id="m_${key}">
           <option value="">اختر</option>
           ${monthsList.map(m=>`<option value="${m}">${m}</option>`).join("")}
         </select>
@@ -308,94 +189,70 @@ function renderTable(data){
     </tr>`;
   });
 
-  html += "</tbody></table></div>";
-  document.getElementById("result").innerHTML = html;
+  result.innerHTML = `
+    <button class="print-btn" onclick="printReceipts()">
+      🖨️ تحميل ملف الإيصالات
+    </button>
+    <div class="table-scroll">
+      <div class="mk-table-wrap">
+        <table class="mk-table">
+          <thead>
+            <tr>
+              <th>المكتب</th><th>الموقع</th><th>النوع</th>
+              <th>الإيجار</th><th>بداية</th><th>نهاية</th>
+              <th>المتبقي</th><th>المالك</th><th>الشهر</th><th>الدفع</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
 }
 
 function payNow(btn,item){
-  const month = document.getElementById(
-    "m_"+item.assetName.replace(/\s/g,"_")
-  ).value;
-
-  if(!month){
-    alert("اختر الشهر");
-    return;
-  }
-
-  btn.disabled = true;
+  const month = document.getElementById("m_"+item.assetName.replace(/\s/g,"_")).value;
+  if(!month){ alert("اختر الشهر"); return; }
+  btn.disabled=true;
   showLoader("جاري تسجيل الدفع...");
 
   fetch(API_URL,{
     method:"POST",
-    body: JSON.stringify({
-      action: "confirmPayment",
-      engineerId: document.getElementById("engineerId").value,
-      assetName: item.assetName,
-      month: month
+    body:JSON.stringify({
+      action:"confirmPayment",
+      engineerId:document.getElementById("engineerId").value,
+      assetName:item.assetName, month
     })
   })
   .then(r=>r.json())
   .then(res=>{
     hideLoader();
-    if(res.error){
-      btn.disabled=false;
-      alert(res.error);
-      return;
-    }
-    btn.innerText="تم الدفع";
+    if(res.error){ btn.disabled=false; alert(res.error); return; }
+    btn.innerText="تم الدفع ✓";
     btn.classList.add("paid");
-    lastPaidMonth = month;
+    lastPaidMonth=month;
   })
-  .catch(()=>{
-    hideLoader();
-    btn.disabled=false;
-    alert("خطأ أثناء الدفع");
-  });
+  .catch(()=>{ hideLoader(); btn.disabled=false; alert("خطأ أثناء الدفع"); });
 }
 
 function printReceipts(){
-
-  const engineerId = document.getElementById("engineerId").value.trim();
-  if(!engineerId){
-    alert("أدخل رقم المهندس");
-    return;
-  }
-
-  if(!lastPaidMonth){
-    alert("لا توجد إيصالات مدفوعة للطباعة");
-    return;
-  }
+  const engineerId=document.getElementById("engineerId").value.trim();
+  if(!engineerId){ alert("أدخل رقم المهندس"); return; }
+  if(!lastPaidMonth){ alert("لا توجد إيصالات مدفوعة للطباعة"); return; }
 
   showLoader("جاري تجهيز ملف الإيصالات...");
-
   fetch(API_URL,{
     method:"POST",
-    body: JSON.stringify({
-      action: "printReceipts",
-      engineerId: engineerId,
-      month: lastPaidMonth
-    })
+    body:JSON.stringify({ action:"printReceipts", engineerId, month:lastPaidMonth })
   })
   .then(r=>r.json())
   .then(res=>{
     hideLoader();
-    if(res.error){
-      alert(res.error);
-      return;
-    }
-    if(res.pdfUrl){
-      window.location.href = res.pdfUrl;
-    }else{
-      alert("لم يتم إنشاء ملف الإيصالات");
-    }
+    if(res.error){ alert(res.error); return; }
+    if(res.pdfUrl) window.location.href=res.pdfUrl;
+    else alert("لم يتم إنشاء ملف الإيصالات");
   })
-  .catch(()=>{
-    hideLoader();
-    alert("تعذر فتح ملف الإيصالات");
-  });
+  .catch(()=>{ hideLoader(); alert("تعذر فتح ملف الإيصالات"); });
 }
-
 </script>
-
 </body>
 </html>
