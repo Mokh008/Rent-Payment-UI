@@ -1,0 +1,302 @@
+/* ============================================
+   MK NEXUS — mk-theme.css
+   Shared identity for all sub-projects
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+
+/* ── Variables ── */
+:root {
+  --bg:       #080d18;
+  --bg2:      #0c1220;
+  --card:     rgba(15,22,40,0.88);
+  --card-s:   #0f1628;
+  --accent:   #2dd4bf;
+  --accent2:  #0ea5e9;
+  --accent3:  #818cf8;
+  --danger:   #f87171;
+  --warning:  #facc15;
+  --success:  #4ade80;
+  --text:     #f1f5f9;
+  --muted:    #64748b;
+  --border:   rgba(255,255,255,0.07);
+  --border-a: rgba(45,212,191,0.25);
+  --glow:     0 0 28px rgba(45,212,191,0.2);
+  --font-d:   'Rajdhani', sans-serif;
+  --font-b:   'DM Sans', sans-serif;
+  --r-sm:  10px;
+  --r-md:  16px;
+  --r-lg:  24px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-b);
+  color: var(--text);
+  background: var(--bg);
+  min-height: 100vh;
+  overflow-x: hidden;
+  animation: pageFade .5s ease forwards;
+}
+
+@keyframes pageFade { from{opacity:0} to{opacity:1} }
+
+/* ── Background layers ── */
+#mk-bg {
+  position: fixed; inset: 0; z-index: -3; pointer-events: none;
+  background: url("https://images.unsplash.com/photo-1536152470836-b943b246224c?auto=format&fit=crop&w=1920&q=80") center/cover;
+}
+#mk-overlay {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(8,13,24,0.88) 0%, rgba(8,13,24,0.72) 100%),
+    linear-gradient(rgba(45,212,191,0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(45,212,191,0.018) 1px, transparent 1px);
+  background-size: auto, 60px 60px, 60px 60px;
+}
+
+/* ── Starfall ── */
+.starfall { position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden; }
+.falling-star {
+  position:absolute; width:3px; height:3px; border-radius:50%;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent), 0 0 14px rgba(45,212,191,.5);
+  opacity:0; animation: starFall linear infinite;
+}
+@keyframes starFall {
+  0%  { transform:translateY(-20px) translateX(0); opacity:0; }
+  8%  { opacity:.8; }
+  92% { opacity:.6; }
+  100%{ transform:translateY(105vh) translateX(50px); opacity:0; }
+}
+.falling-star:nth-child(1) {left:4vw;  animation-duration:8s;  animation-delay:0s}
+.falling-star:nth-child(2) {left:10vw; animation-duration:11s; animation-delay:2s}
+.falling-star:nth-child(3) {left:17vw; animation-duration:7s;  animation-delay:5s}
+.falling-star:nth-child(4) {left:24vw; animation-duration:9s;  animation-delay:1s}
+.falling-star:nth-child(5) {left:32vw; animation-duration:8s;  animation-delay:4s}
+.falling-star:nth-child(6) {left:41vw; animation-duration:12s; animation-delay:7s}
+.falling-star:nth-child(7) {left:50vw; animation-duration:8s;  animation-delay:2s}
+.falling-star:nth-child(8) {left:59vw; animation-duration:9s;  animation-delay:3s}
+.falling-star:nth-child(9) {left:67vw; animation-duration:7s;  animation-delay:1s}
+.falling-star:nth-child(10){left:75vw; animation-duration:10s; animation-delay:6s}
+.falling-star:nth-child(11){left:83vw; animation-duration:8s;  animation-delay:4s}
+.falling-star:nth-child(12){left:91vw; animation-duration:9s;  animation-delay:5s}
+
+/* ── MK Logo text ── */
+.mk-logo {
+  font-family: var(--font-d);
+  font-weight: 700;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, #2dd4bf, #0ea5e9, #818cf8);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  animation: logoGlow 4s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes logoGlow {
+  0%,100%{ filter: drop-shadow(0 0 6px rgba(45,212,191,.2)); }
+  50%    { filter: drop-shadow(0 0 18px rgba(45,212,191,.55)); }
+}
+
+/* ── Page Header Bar ── */
+.mk-header {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(8,13,24,0.85);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px clamp(16px,3vw,40px);
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+}
+.mk-header-brand {
+  display: flex; align-items: center; gap: 12px;
+}
+.mk-header-brand .mk-logo { font-size: clamp(16px,2vw,22px); }
+.mk-header-title {
+  font-family: var(--font-d);
+  font-size: clamp(13px,1.4vw,17px);
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.mk-header-sep {
+  width:1px; height:20px;
+  background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+  opacity:.4;
+}
+
+/* ── Cards ── */
+.mk-card {
+  background: var(--card);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  transition: transform .3s, box-shadow .3s, border-color .3s;
+  position: relative; overflow: hidden;
+}
+.mk-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity:0; transition: opacity .3s;
+}
+.mk-card:hover::before { opacity:1; }
+.mk-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--glow), 0 16px 40px rgba(0,0,0,.4);
+  border-color: var(--border-a);
+}
+
+/* ── Inputs ── */
+.mk-input, .mk-select {
+  font-family: var(--font-b);
+  width: 100%; padding: 11px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: rgba(8,13,24,.7);
+  color: var(--text); font-size: 14px; outline: none;
+  transition: border-color .25s, box-shadow .25s;
+}
+.mk-input::placeholder { color: var(--muted); }
+.mk-input:focus, .mk-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(45,212,191,.12);
+}
+.mk-select option { background: var(--card-s); color: var(--text); }
+
+/* ── Labels ── */
+.mk-label {
+  display: block; margin-bottom: 7px;
+  font-size: 12px; font-weight: 500; color: var(--muted);
+  text-transform: uppercase; letter-spacing: .8px;
+}
+
+/* ── Field wrapper ── */
+.mk-field { margin-bottom: 20px; }
+
+/* ── Buttons ── */
+.mk-btn {
+  font-family: var(--font-b); font-weight: 600; font-size: 14px;
+  padding: 12px 24px; border-radius: var(--r-sm); border: none;
+  cursor: pointer; color: #fff; letter-spacing:.5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  transition: all .25s; position:relative; overflow:hidden;
+  white-space: nowrap;
+}
+.mk-btn::after {
+  content:''; position:absolute; inset:0;
+  background: linear-gradient(120deg,transparent 30%,rgba(255,255,255,.15) 50%,transparent 70%);
+  transform: translateX(-100%); transition: transform .5s;
+}
+.mk-btn:hover::after { transform: translateX(100%); }
+.mk-btn:hover { transform:translateY(-2px); box-shadow:0 12px 35px rgba(45,212,191,.35); }
+.mk-btn:active { transform:scale(.98); }
+.mk-btn:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+
+.mk-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-a);
+  color: var(--accent);
+}
+.mk-btn-ghost:hover { background: rgba(45,212,191,.08); box-shadow: var(--glow); }
+
+.mk-btn-danger {
+  background: linear-gradient(135deg, #dc2626, #f87171);
+}
+.mk-btn-success {
+  background: linear-gradient(135deg, #16a34a, #4ade80);
+  cursor: default;
+}
+
+/* ── KPI Cards ── */
+.mk-kpi {
+  padding: clamp(16px,2vw,24px);
+}
+.mk-kpi-label {
+  font-size: 11px; font-weight:500; color: var(--muted);
+  text-transform:uppercase; letter-spacing:.8px; margin-bottom:10px;
+}
+.mk-kpi-value {
+  font-family: var(--font-d);
+  font-size: clamp(24px,3vw,36px); font-weight:700; line-height:1;
+  background: linear-gradient(135deg, var(--text) 60%, var(--accent));
+  -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+}
+
+/* ── Section title ── */
+.mk-section-title {
+  font-family: var(--font-d);
+  font-size: clamp(15px,1.5vw,20px); font-weight:600; letter-spacing:2px;
+  color: var(--text);
+  padding-left: 12px; border-left: 3px solid var(--accent);
+  margin: 32px 0 16px;
+}
+
+/* ── Table ── */
+.mk-table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+}
+.mk-table { width:100%; border-collapse:collapse; }
+.mk-table th {
+  padding: 12px 14px;
+  font-family: var(--font-d); font-size:12px; font-weight:600;
+  color: var(--accent); text-transform:uppercase; letter-spacing:1px;
+  background: rgba(45,212,191,.05);
+  border-bottom: 1px solid var(--border);
+  text-align:center;
+}
+.mk-table td {
+  padding: 10px 14px; font-size:13px;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  text-align:center; color: var(--text);
+}
+.mk-table tr:last-child td { border-bottom:none; }
+.mk-table tr:hover td { background: rgba(45,212,191,.04); }
+
+/* ── Success / Error banners ── */
+.mk-success {
+  background: rgba(74,222,128,.12); border:1px solid rgba(74,222,128,.3);
+  color: var(--success); padding:14px 18px; border-radius:var(--r-md);
+  font-weight:600; text-align:center;
+}
+.mk-error {
+  background: rgba(248,113,113,.12); border:1px solid rgba(248,113,113,.3);
+  color: var(--danger); padding:14px 18px; border-radius:var(--r-md);
+  font-weight:600; text-align:center;
+}
+
+/* ── Spinner / Loader ── */
+.mk-loader {
+  position:fixed; inset:0; z-index:2000;
+  background:rgba(0,0,0,.65); backdrop-filter:blur(4px);
+  display:none; justify-content:center; align-items:center; flex-direction:column; gap:16px;
+}
+.mk-spinner {
+  width:60px; height:60px; position:relative;
+}
+.mk-spinner::before, .mk-spinner::after {
+  content:''; position:absolute; border-radius:50%;
+  border: 4px solid transparent;
+}
+.mk-spinner::before {
+  inset:0; border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+}
+.mk-spinner::after {
+  inset:8px; border-top-color: var(--accent2);
+  animation: spin 1.2s linear infinite reverse;
+}
+.mk-loader-text {
+  font-family: var(--font-d); font-size:15px; letter-spacing:1px; color: var(--muted);
+}
+@keyframes spin { to{ transform:rotate(360deg); } }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width:5px; height:5px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:rgba(45,212,191,.25); border-radius:10px; }
+::-webkit-scrollbar-thumb:hover { background:rgba(45,212,191,.45); }
