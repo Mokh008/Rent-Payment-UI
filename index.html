@@ -2,10 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>نظام دفع الإيجارات — MK Nexus</title>
 <link rel="stylesheet" href="mk-theme.css">
 <style>
+
 body { display:block; }
 
 .page-wrap {
@@ -20,53 +21,185 @@ body { display:block; }
   padding: clamp(22px,3vw,36px);
 }
 
-/* ── Table wrapper override ── */
-.mk-table th { white-space: nowrap; }
-.mk-table td { white-space: nowrap; }
-
-.owner-cell { color: var(--warning); font-weight:600; }
+/* ── Print button ── */
+.print-btn {
+  display: flex; align-items:center; gap:8px;
+  padding: 10px 18px; margin-bottom:20px;
+  border-radius: var(--r-sm); border:none;
+  background: linear-gradient(135deg,#0f766e,#2dd4bf);
+  color:#fff; font-weight:700; font-size:13px; cursor:pointer;
+  transition:.25s; width: fit-content;
+}
+.print-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(45,212,191,.3); }
 
 /* ── Pay button states ── */
 .pay-btn {
-  padding: 6px 14px;
-  font-size: 12px;
+  padding: 10px 20px;
+  font-size: 13px;
   background: linear-gradient(135deg, #2563eb, #38bdf8);
-  color:#fff; border:none; border-radius:8px; cursor:pointer;
-  font-weight:600; transition:.2s;
+  color:#fff; border:none; border-radius:10px; cursor:pointer;
+  font-weight:600; transition:.2s; width:100%;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
 }
 .pay-btn:hover:not(.paid):not(:disabled) { transform:translateY(-1px); box-shadow:0 6px 18px rgba(37,99,235,.4); }
 .pay-btn.paid { background:linear-gradient(135deg,#16a34a,#4ade80); cursor:default; }
 .pay-btn:disabled { opacity:.5; cursor:not-allowed; }
 
-/* ── Month select in table ── */
-.mk-table .month-sel {
-  padding: 5px 8px;
-  border-radius: 8px;
-  background: rgba(8,13,24,.7);
+/* ── Month select ── */
+.month-sel {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(8,13,24,.8);
   border: 1px solid var(--border);
-  color: var(--text); font-size:13px; outline:none;
+  color: var(--text); font-size:14px; outline:none;
   transition: border-color .2s;
+  width: 100%; min-height:44px;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  padding-left: 32px;
 }
-.mk-table .month-sel:focus { border-color: var(--accent); }
+.month-sel:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(45,212,191,.12); }
 
-/* ── Print button ── */
-.print-btn {
-  display: flex; align-items:center; gap:8px;
-  padding: 9px 18px; margin-bottom:16px;
-  border-radius: var(--r-sm); border:none;
-  background: linear-gradient(135deg,#0f766e,#2dd4bf);
-  color:#fff; font-weight:700; font-size:13px; cursor:pointer;
-  transition:.25s;
-}
-.print-btn:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(45,212,191,.3); }
+/* ── Remaining days badges ── */
+.days-ok   { color:var(--success); font-weight:600; }
+.days-warn { color:var(--warning); font-weight:600; }
+.days-crit { color:var(--danger);  font-weight:600; }
 
-/* ── Remaining days badge ── */
-.days-ok    { color:var(--success); font-weight:600; }
-.days-warn  { color:var(--warning); font-weight:600; }
-.days-crit  { color:var(--danger);  font-weight:600; }
+.owner-cell { color: var(--warning); font-weight:600; }
 
-/* ── Table scroll on mobile ── */
+/* ==========================================
+   DESKTOP TABLE (≥ 768px)
+   ========================================== */
 .table-scroll { overflow-x:auto; border-radius:var(--r-lg); }
+
+.mk-table th { white-space: nowrap; }
+.mk-table td { white-space: nowrap; }
+
+/* ==========================================
+   MOBILE CARDS (< 768px)
+   ========================================== */
+
+/* Hide table on mobile, show cards */
+@media (max-width: 767px) {
+  .table-scroll { display: none; }
+  .rent-cards   { display: flex; flex-direction: column; gap: 16px; }
+}
+
+/* Hide cards on desktop, show table */
+@media (min-width: 768px) {
+  .rent-cards { display: none; }
+}
+
+/* ── Single Rent Card ── */
+.rent-card {
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .3s, box-shadow .3s;
+}
+
+.rent-card::before {
+  content: '';
+  position: absolute; top:0; left:0; right:0; height:2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+}
+
+/* Card Header: office name + days badge */
+.rent-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.rent-card-name {
+  font-family: var(--font-d);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.rent-card-days {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rent-card-days.days-ok   { background: rgba(74,222,128,.12);  color: var(--success); border: 1px solid rgba(74,222,128,.25); }
+.rent-card-days.days-warn { background: rgba(250,204,21,.1);   color: var(--warning); border: 1px solid rgba(250,204,21,.25); }
+.rent-card-days.days-crit { background: rgba(248,113,113,.12); color: var(--danger);  border: 1px solid rgba(248,113,113,.25); }
+
+/* Card Info Grid */
+.rent-card-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+
+.rent-card-field {}
+
+.rent-card-field-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 3px;
+}
+
+.rent-card-field-value {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.rent-card-field-value.owner { color: var(--warning); font-weight: 600; }
+.rent-card-field-value.rent-amount {
+  font-family: var(--font-d);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Card Divider */
+.rent-card-divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 16px;
+}
+
+/* Card Actions */
+.rent-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rent-card-actions-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 2px;
+}
+
 </style>
 </head>
 <body>
@@ -97,9 +230,12 @@ body { display:block; }
   <div class="mk-card search-card">
     <div class="mk-field">
       <label class="mk-label">رقم المهندس (ID)</label>
-      <input class="mk-input" id="engineerId" type="text" placeholder="مثال: 1001777">
+      <input class="mk-input" id="engineerId" type="text"
+             placeholder="مثال: 1001777"
+             inputmode="numeric"
+             style="font-size:16px">
     </div>
-    <button class="mk-btn" style="width:100%" onclick="loadData()">عرض البيانات</button>
+    <button class="mk-btn" style="width:100%;min-height:48px" onclick="loadData()">عرض البيانات</button>
   </div>
 
   <!-- Results -->
@@ -113,7 +249,6 @@ body { display:block; }
   <div class="mk-loader-text" id="loaderText">جاري التنفيذ...</div>
 </div>
 
-<!-- ══════════ SCRIPT (unchanged logic) ══════════ -->
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbymN-eiB6AR8LsK31ssWhYtCSq7uzk2qYU3LVLKkx1HM_OhRxa7zC10zFmj47zFDsaAUg/exec";
 let lastPaidMonth = null;
@@ -151,18 +286,20 @@ function loadData(){
 
   fetch(API_URL+"?action=getAssets&engineerId="+id)
     .then(r=>r.json())
-    .then(d=>{ hideLoader(); renderTable(d.assets||d); })
+    .then(d=>{ hideLoader(); renderResults(d.assets||d); })
     .catch(()=>{ hideLoader(); alert("خطأ في الاتصال"); });
 }
 
-function renderTable(data){
+function renderResults(data){
   const result = document.getElementById("result");
   if(!data||!data.length){
     result.innerHTML='<p style="text-align:center;color:var(--muted);padding:40px">لا توجد بيانات</p>';
     return;
   }
+
   const monthsList = generateMonths(2025,12,13);
 
+  // ── Build Desktop Table ──────────────────────────
   let rows = "";
   data.forEach(i=>{
     const key = i.assetName.replace(/\s/g,"_");
@@ -178,21 +315,18 @@ function renderTable(data){
       <td class="${dc}">${i.remainingDays}</td>
       <td class="owner-cell">${i.ownerName}</td>
       <td>
-        <select class="month-sel" id="m_${key}">
+        <select class="month-sel" id="mt_${key}">
           <option value="">اختر</option>
           ${monthsList.map(m=>`<option value="${m}">${m}</option>`).join("")}
         </select>
       </td>
       <td>
-        <button class="pay-btn" onclick='payNow(this,${JSON.stringify(i)})'>دفع</button>
+        <button class="pay-btn" style="width:auto;padding:6px 14px" onclick='payNow(this,${JSON.stringify(i)},"mt")'>دفع</button>
       </td>
     </tr>`;
   });
 
-  result.innerHTML = `
-    <button class="print-btn" onclick="printReceipts()">
-      🖨️ تحميل ملف الإيصالات
-    </button>
+  const desktopTable = `
     <div class="table-scroll">
       <div class="mk-table-wrap">
         <table class="mk-table">
@@ -207,11 +341,80 @@ function renderTable(data){
         </table>
       </div>
     </div>`;
+
+  // ── Build Mobile Cards ───────────────────────────
+  let cards = "";
+  data.forEach(i=>{
+    const key = i.assetName.replace(/\s/g,"_");
+    const dc  = daysClass(i.remainingDays);
+    const daysLabel = parseInt(i.remainingDays) > 0
+      ? `${i.remainingDays} يوم متبقي`
+      : `منتهي`;
+
+    cards += `
+    <div class="rent-card">
+      <div class="rent-card-header">
+        <div class="rent-card-name">${i.assetName}</div>
+        <div class="rent-card-days ${dc}">${daysLabel}</div>
+      </div>
+
+      <div class="rent-card-info">
+        <div class="rent-card-field">
+          <div class="rent-card-field-label">الموقع</div>
+          <div class="rent-card-field-value">${i.location}</div>
+        </div>
+        <div class="rent-card-field">
+          <div class="rent-card-field-label">النوع</div>
+          <div class="rent-card-field-value">${i.assetType}</div>
+        </div>
+        <div class="rent-card-field">
+          <div class="rent-card-field-label">الإيجار الشهري</div>
+          <div class="rent-card-field-value rent-amount">${i.monthlyRent}</div>
+        </div>
+        <div class="rent-card-field">
+          <div class="rent-card-field-label">المالك</div>
+          <div class="rent-card-field-value owner">${i.ownerName}</div>
+        </div>
+        <div class="rent-card-field">
+          <div class="rent-card-field-label">بداية العقد</div>
+          <div class="rent-card-field-value">${formatDate(i.contractStart)}</div>
+        </div>
+        <div class="rent-card-field">
+          <div class="rent-card-field-label">نهاية العقد</div>
+          <div class="rent-card-field-value">${formatDate(i.contractEnd)}</div>
+        </div>
+      </div>
+
+      <div class="rent-card-divider"></div>
+
+      <div class="rent-card-actions">
+        <div class="rent-card-actions-label">اختر الشهر وادفع</div>
+        <select class="month-sel" id="mc_${key}">
+          <option value="">اختر الشهر</option>
+          ${monthsList.map(m=>`<option value="${m}">${m}</option>`).join("")}
+        </select>
+        <button class="pay-btn" onclick='payNow(this,${JSON.stringify(i)},"mc")'>💳 دفع الإيجار</button>
+      </div>
+    </div>`;
+  });
+
+  const mobileCards = `<div class="rent-cards">${cards}</div>`;
+
+  result.innerHTML = `
+    <button class="print-btn" onclick="printReceipts()">
+      🖨️ تحميل ملف الإيصالات
+    </button>
+    ${desktopTable}
+    ${mobileCards}
+  `;
 }
 
-function payNow(btn,item){
-  const month = document.getElementById("m_"+item.assetName.replace(/\s/g,"_")).value;
+// prefix: "mt" = table select, "mc" = card select
+function payNow(btn, item, prefix){
+  const key   = item.assetName.replace(/\s/g,"_");
+  const month = document.getElementById(prefix+"_"+key).value;
   if(!month){ alert("اختر الشهر"); return; }
+
   btn.disabled=true;
   showLoader("جاري تسجيل الدفع...");
 
@@ -253,6 +456,11 @@ function printReceipts(){
   })
   .catch(()=>{ hideLoader(); alert("تعذر فتح ملف الإيصالات"); });
 }
+
+// Enter key support
+document.addEventListener("keydown", e => {
+  if(e.key === "Enter") loadData();
+});
 </script>
 </body>
 </html>
