@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>تقرير الإيجارات — MK Nexus</title>
+<link rel="stylesheet" href="mk-theme.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- ══════════ AUTH GUARD ══════════ -->
+<script>
+(function() {
+  let authRaw = sessionStorage.getItem("authUser");
+  if (!authRaw) {
+    const params = new URLSearchParams(location.search);
+    const encoded = params.get("auth");
+    if (encoded) {
+      try {
+        authRaw = atob(encoded);
+        sessionStorage.setItem("authUser", authRaw);
+        history.replaceState({}, "", location.pathname);
+      } catch(e) {}
+    }
+  }
+  if (!authRaw) {
+    alert("يجب الدخول عبر منصة MK Nexus");
+    location.href = "https://mokh008.github.io/Attendance-Login/";
+    throw new Error("Unauthorized");
+  }
+  const user = JSON.parse(authRaw);
+  const role = (user.role || "").trim().toLowerCase();
+  if (role !== "admin") {
+    alert("هذه الصفحة للمسؤول فقط");
+    history.back();
+    throw new Error("Forbidden");
+  }
+  window._AUTH_USER = user;
+})();
+</script>
+
+<style>
+body { display: block; }
+
+.page-wrap {
+  padding: 0 clamp(12px,2.5vw,40px) 60px;
+}
+
+/* ── Top bar ── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 24px 0 20px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-select {
+  padding: 9px 14px;
+  border-radius: var(--r-md, 12px);
+  background: rgba(8,13,24,.85);
+  border: 1px solid var(--border, #1f2937);
+  color: var(--text, #f1f5f9);
+  font-size: 14px;
+  outline: none;
+  transition: border-color .2s;
+  min-height: 42px;
+  min-width: 160px;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 12px center;
+  padding-left: 32px;
+}
+.filter-select:focus { border-color: var(--accent, #2dd4bf); box-shadow: 0 0 0 3px rgba(45,212,191,.12); }
+
+/* ── Export btn ── */
+.export-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 9px 18px; border: none; border-radius: var(--r-sm, 8px);
+  background: linear-gradient(135deg,#166534,#4ade80);
+  color: #fff; font-weight: 700; font-size: 13px; cursor: pointer;
+  transition: .25s; min-height: 42px;
+  -webkit-tap-highlight-color: transparent;
+}
+.export-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(74,222,128,.3); }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 8px 20px; border-radius: 30px; border: 1px solid var(--border, #1f2937);
+  background: transparent; color: var(--muted, #94a3b8);
+  font-size: 13px; font-weight: 600; cursor: pointer; transition: .2s;
+  min-height: 38px;
+}
+.tab-btn.active {
+  background: linear-gradient(135deg, rgba(45,212,191,.15), rgba(129,140,248,.15));
+  border-color: var(--accent, #2dd4bf);
+  color: var(--accent, #2dd4bf);
+}
+
+/* ── KPI strip ── */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px,1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+}
+.kpi-mini {
+  padding: 18px 16px;
+  text-align: center;
+}
+.kpi-mini h4 {
+  font-size: 11px; font-weight: 500; color: var(--muted, #94a3b8);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px;
+}
+.kpi-mini p {
+  font-size: clamp(22px,2.5vw,32px); font-weight: 700; margin: 0;
+  background: linear-gradient(135deg, var(--accent,#2dd4bf), var(--accent2,#818cf8));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.kpi-mini p.danger-val {
+  background: linear-gradient(135deg, #f87171, #fca5a5);
+  -webkit-background-clip: text; background-clip: text;
+}
+.kpi-mini p.success-val {
+  background: linear-gradient(135deg, #4ade80, #86efac);
+  -webkit-background-clip: text; background-clip: text;
+}
+
+/* ── Table ── */
+.table-wrap { overflow-x: auto; border-radius: var(--r-lg, 16px); }
+
+.rpt-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rpt-table thead th {
+  padding: 12px 14px;
+  background: rgba(45,212,191,.08);
+  color: var(--accent, #2dd4bf);
+  font-weight: 700;
+  letter-spacing: .5px;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border, #1f2937);
+  text-align: right;
+}
+.rpt-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,.04);
+  transition: background .15s;
+}
+.rpt-table tbody tr:hover { background: rgba(45,212,191,.04); }
+.rpt-table td {
+  padding: 11px 14px;
+  color: var(--text, #f1f5f9);
+  white-space: nowrap;
+}
+.rpt-table td.amount {
+  font-family: var(--font-d, monospace);
+  font-weight: 700;
+  color: var(--accent, #2dd4bf);
+}
+
+/* status badges */
+.badge-paid   { background: rgba(74,222,128,.12);  color: #4ade80; border: 1px solid rgba(74,222,128,.3);  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-unpaid { background: rgba(248,113,113,.12); color: #f87171; border: 1px solid rgba(248,113,113,.3); padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+
+.state-msg {
+  text-align: center; padding: 60px 20px;
+  color: var(--muted, #94a3b8); font-size: 14px;
+}
+
+/* mobile cards */
+@media (max-width: 700px) {
+  .table-wrap { display: none; }
+  .mobile-cards { display: flex; flex-direction: column; gap: 14px; }
+}
+@media (min-width: 701px) {
+  .mobile-cards { display: none; }
+}
+
+.rpt-card {
+  background: var(--card, #121826);
+  border: 1px solid var(--border, #1f2937);
+  border-radius: 18px; padding: 18px;
+}
+.rpt-card.unpaid { border-color: rgba(248,113,113,.3); }
+.rpt-card.paid   { border-color: rgba(74,222,128,.2); }
+
+.rpt-card-top {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 12px; gap: 10px;
+}
+.rpt-card-name { font-weight: 700; font-size: 15px; color: var(--text); }
+.rpt-card-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px;
+}
+.rpt-card-field-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 2px; }
+.rpt-card-field-value { font-size: 13px; color: var(--text); }
+.rpt-card-field-value.amount { font-size: 16px; font-weight: 700; color: var(--accent); }
+
+/* logout btn */
+.logout-btn {
+  padding: 6px 14px; font-size: 12px;
+  background: transparent; border: 1px solid var(--border, #1f2937);
+  color: var(--muted); border-radius: var(--r-sm, 8px); cursor: pointer;
+  transition: .2s; min-height: 36px;
+}
+.logout-btn:hover { border-color: var(--danger, #f87171); color: var(--danger); }
+
+/* section divider */
+.section-title {
+  font-size: 14px; font-weight: 700; color: var(--accent);
+  margin: 28px 0 14px; letter-spacing: .5px;
+  padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+</style>
+</head>
+<body>
+
+<div id="mk-bg"></div>
+<div id="mk-overlay"></div>
+<div class="starfall">
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+  <div class="falling-star"></div><div class="falling-star"></div>
+</div>
+
+<header class="mk-header">
+  <div class="mk-header-brand">
+    <span class="mk-logo" style="font-size:20px">MK NEXUS</span>
+    <div class="mk-header-sep"></div>
+    <span class="mk-header-title">تقرير الإيجارات</span>
+  </div>
+  <button class="logout-btn" onclick="history.back()">← رجوع</button>
+</header>
+
+<div class="page-wrap">
+
+  <!-- Filters + export -->
+  <div class="top-bar">
+    <div class="filter-row">
+      <select class="filter-select" id="monthFilter" onchange="applyFilter()">
+        <option value="">اختر الشهر</option>
+      </select>
+      <select class="filter-select" id="statusFilter" onchange="applyFilter()">
+        <option value="">الكل</option>
+        <option value="paid">دفع ✅</option>
+        <option value="unpaid">لم يدفع ❌</option>
+      </select>
+    </div>
+    <button class="export-btn" onclick="exportExcel()">
+      📥 تصدير Excel
+    </button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="mk-card kpi-mini"><h4>إجمالي المكاتب</h4><p id="kpiTotal">—</p></div>
+    <div class="mk-card kpi-mini"><h4>دفعوا</h4><p id="kpiPaid" class="success-val">—</p></div>
+    <div class="mk-card kpi-mini"><h4>لم يدفعوا</h4><p id="kpiUnpaid" class="danger-val">—</p></div>
+    <div class="mk-card kpi-mini"><h4>إجمالي المدفوع</h4><p id="kpiPaidAmount">—</p></div>
+    <div class="mk-card kpi-mini"><h4>المتبقي للتحصيل</h4><p id="kpiUnpaidAmount" class="danger-val">—</p></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('all', this)">الكل</button>
+    <button class="tab-btn" onclick="switchTab('paid', this)">دفعوا ✅</button>
+    <button class="tab-btn" onclick="switchTab('unpaid', this)">لم يدفعوا ❌</button>
+    <button class="tab-btn" onclick="switchTab('offices', this)">المكاتب غير المدفوعة</button>
+  </div>
+
+  <!-- Desktop table -->
+  <div class="mk-card table-wrap" id="tableSection">
+    <table class="rpt-table" id="reportTable">
+      <thead>
+        <tr id="tableHead">
+          <th>#</th>
+          <th>رقم المهندس</th>
+          <th>اسم المهندس</th>
+          <th>اسم المكتب</th>
+          <th>الموقع</th>
+          <th>الإيجار الشهري</th>
+          <th>الشهر المدفوع</th>
+          <th>الحالة</th>
+          <th>تاريخ الدفع</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="9" class="state-msg">اختر شهراً لعرض البيانات</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="mobile-cards" id="mobileCards"></div>
+
+</div>
+
+<!-- LOADER -->
+<div id="globalLoader" class="mk-loader">
+  <div class="mk-spinner"></div>
+  <div class="mk-loader-text" id="loaderText">جاري التحميل...</div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbymN-eiB6AR8LsK31ssWhYtCSq7uzk2qYU3LVLKkx1HM_OhRxa7zC10zFmj47zFDsaAUg/exec";
+
+let allData    = [];
+let filtered   = [];
+let activeTab  = "all";
+
+function showLoader(t) {
+  document.getElementById("loaderText").innerText = t || "جاري التحميل...";
+  document.getElementById("globalLoader").style.display = "flex";
+}
+function hideLoader() { document.getElementById("globalLoader").style.display = "none"; }
+
+function currency(n) {
+  return new Intl.NumberFormat("ar-EG").format(n || 0);
+}
+
+/* ── Build month filter ── */
+function buildMonthFilter(data) {
+  const months = [...new Set(data.map(r => r.month).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById("monthFilter");
+  months.forEach(m => {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = m;
+    sel.appendChild(o);
+  });
+  // Auto-select latest month
+  if (months.length) {
+    sel.value = months[0];
+    applyFilter();
+  }
+}
+
+/* ── Switch tab ── */
+function switchTab(tab, btn) {
+  activeTab = tab;
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  renderByTab();
+}
+
+/* ── Apply filter ── */
+function applyFilter() {
+  const month  = document.getElementById("monthFilter").value;
+  const status = document.getElementById("statusFilter").value;
+
+  filtered = allData.filter(r => {
+    if (month  && r.month !== month)   return false;
+    if (status === "paid"   && r.status !== "paid")   return false;
+    if (status === "unpaid" && r.status !== "unpaid") return false;
+    return true;
+  });
+
+  renderKPIs(filtered);
+  renderByTab();
+}
+
+function renderByTab() {
+  let data = filtered;
+
+  if (activeTab === "paid")    data = filtered.filter(r => r.status === "paid");
+  if (activeTab === "unpaid")  data = filtered.filter(r => r.status === "unpaid");
+  if (activeTab === "offices") {
+    renderOfficesTable(filtered.filter(r => r.status === "unpaid"));
+    return;
+  }
+
+  renderTable(data);
+  renderMobileCards(data);
+}
+
+/* ── KPIs ── */
+function renderKPIs(data) {
+  const paid         = data.filter(r => r.status === "paid");
+  const unpaid       = data.filter(r => r.status === "unpaid");
+  const paidAmount   = paid.reduce((s, r)   => s + (+r.monthlyRent || 0), 0);
+  const unpaidAmount = unpaid.reduce((s, r) => s + (+r.monthlyRent || 0), 0);
+
+  document.getElementById("kpiTotal").textContent       = data.length;
+  document.getElementById("kpiPaid").textContent        = paid.length;
+  document.getElementById("kpiUnpaid").textContent      = unpaid.length;
+  document.getElementById("kpiPaidAmount").textContent  = currency(paidAmount);
+  document.getElementById("kpiUnpaidAmount").textContent= currency(unpaidAmount);
+}
+
+/* ── Desktop table: engineers ── */
+function renderTable(data) {
+  // Reset head
+  document.getElementById("tableHead").innerHTML = `
+    <th>#</th><th>رقم المهندس</th><th>اسم المهندس</th>
+    <th>اسم المكتب</th><th>الموقع</th><th>الإيجار الشهري</th>
+    <th>الشهر المدفوع</th><th>الحالة</th><th>تاريخ الدفع</th>`;
+
+  const tbody = document.getElementById("tableBody");
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="9" class="state-msg">لا توجد بيانات مطابقة</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((r, i) => {
+    const badge = r.status === "paid"
+      ? `<span class="badge-paid">دفع ✅</span>`
+      : `<span class="badge-unpaid">لم يدفع ❌</span>`;
+    return `
+      <tr>
+        <td style="color:var(--muted);font-size:12px">${i + 1}</td>
+        <td style="color:var(--muted);font-size:12px">${r.engineerId || "—"}</td>
+        <td>${r.engineerName || "—"}</td>
+        <td style="font-weight:600">${r.assetName || "—"}</td>
+        <td style="color:var(--muted)">${r.location || "—"}</td>
+        <td class="amount">${currency(r.monthlyRent)}</td>
+        <td>${r.month || "—"}</td>
+        <td>${badge}</td>
+        <td style="color:var(--muted);font-size:12px">${r.paidAt || "—"}</td>
+      </tr>`;
+  }).join("");
+}
+
+/* ── Offices unpaid table ── */
+function renderOfficesTable(data) {
+  document.getElementById("tableHead").innerHTML = `
+    <th>#</th><th>اسم المكتب</th><th>الموقع</th>
+    <th>النوع</th><th>الإيجار الشهري</th><th>المالك</th>
+    <th>المهندس المسؤول</th><th>الشهر</th>`;
+
+  const tbody = document.getElementById("tableBody");
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="state-msg">✅ جميع المكاتب دفعت الإيجار</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((r, i) => `
+    <tr>
+      <td style="color:var(--muted);font-size:12px">${i + 1}</td>
+      <td style="font-weight:700;color:var(--danger)">${r.assetName || "—"}</td>
+      <td>${r.location || "—"}</td>
+      <td>${r.assetType || "—"}</td>
+      <td class="amount">${currency(r.monthlyRent)}</td>
+      <td style="color:var(--warning);font-weight:600">${r.ownerName || "—"}</td>
+      <td>${r.engineerName || "—"}</td>
+      <td>${r.month || "—"}</td>
+    </tr>`).join("");
+}
+
+/* ── Mobile cards ── */
+function renderMobileCards(data) {
+  const box = document.getElementById("mobileCards");
+  if (!data.length) {
+    box.innerHTML = `<div class="state-msg">لا توجد بيانات مطابقة</div>`;
+    return;
+  }
+  box.innerHTML = data.map(r => {
+    const isPaid = r.status === "paid";
+    const badge  = isPaid
+      ? `<span class="badge-paid">دفع ✅</span>`
+      : `<span class="badge-unpaid">لم يدفع ❌</span>`;
+    return `
+    <div class="rpt-card ${isPaid ? "paid" : "unpaid"}">
+      <div class="rpt-card-top">
+        <div class="rpt-card-name">${r.assetName || "—"}</div>
+        ${badge}
+      </div>
+      <div class="rpt-card-grid">
+        <div>
+          <div class="rpt-card-field-label">المهندس</div>
+          <div class="rpt-card-field-value">${r.engineerName || "—"}</div>
+        </div>
+        <div>
+          <div class="rpt-card-field-label">الموقع</div>
+          <div class="rpt-card-field-value">${r.location || "—"}</div>
+        </div>
+        <div>
+          <div class="rpt-card-field-label">الإيجار الشهري</div>
+          <div class="rpt-card-field-value amount">${currency(r.monthlyRent)} ج</div>
+        </div>
+        <div>
+          <div class="rpt-card-field-label">الشهر</div>
+          <div class="rpt-card-field-value">${r.month || "—"}</div>
+        </div>
+        ${isPaid ? `<div><div class="rpt-card-field-label">تاريخ الدفع</div><div class="rpt-card-field-value" style="font-size:11px">${r.paidAt || "—"}</div></div>` : ""}
+        <div>
+          <div class="rpt-card-field-label">المالك</div>
+          <div class="rpt-card-field-value" style="color:var(--warning)">${r.ownerName || "—"}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+/* ── Export Excel ── */
+function exportExcel() {
+  const month = document.getElementById("monthFilter").value || "كل الشهور";
+  const data  = activeTab === "paid"    ? filtered.filter(r => r.status === "paid") :
+                activeTab === "unpaid"  ? filtered.filter(r => r.status === "unpaid") :
+                filtered;
+
+  if (!data.length) { alert("لا توجد بيانات للتصدير"); return; }
+
+  const rows = data.map((r, i) => ({
+    "#":                i + 1,
+    "رقم المهندس":      r.engineerId   || "",
+    "اسم المهندس":      r.engineerName || "",
+    "اسم المكتب":       r.assetName    || "",
+    "الموقع":           r.location     || "",
+    "نوع المكتب":       r.assetType    || "",
+    "الإيجار الشهري":   r.monthlyRent  || 0,
+    "الشهر":            r.month        || "",
+    "الحالة":           r.status === "paid" ? "دفع" : "لم يدفع",
+    "تاريخ الدفع":      r.paidAt       || "",
+    "المالك":           r.ownerName    || ""
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "الإيجارات");
+  XLSX.writeFile(wb, `تقرير_الإيجارات_${month}.xlsx`);
+}
+
+/* ── Load data ── */
+function loadReport() {
+  showLoader("جاري تحميل بيانات الإيجارات...");
+
+  fetch(`${API_URL}?action=getRentReport&adminKey=mk_admin_2025`)
+    .then(r => r.json())
+    .then(data => {
+      hideLoader();
+      if (!Array.isArray(data)) {
+        document.getElementById("tableBody").innerHTML =
+          `<tr><td colspan="9" class="state-msg">⚠️ خطأ في تحميل البيانات — تأكد من إضافة action=getRentReport في الـ Apps Script</td></tr>`;
+        return;
+      }
+      allData  = data;
+      filtered = data;
+      buildMonthFilter(data);
+    })
+    .catch(() => {
+      hideLoader();
+      document.getElementById("tableBody").innerHTML =
+        `<tr><td colspan="9" class="state-msg">❌ تعذر الاتصال بالخادم</td></tr>`;
+    });
+}
+
+loadReport();
+</script>
+</body>
+</html>
